@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>UX Design Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;1,400&family=Zen+Kaku+Gothic+New:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-dark:#141413;--color-light:#faf9f5;--color-mid-gray:#b0aea5;--color-light-gray:#e8e6dc;--color-orange:#d97757;--color-blue:#6a9bcc;--color-green:#788c5d;--color-surface:#f0ede4;--color-border:#dedad0;--color-text:#141413;--color-text-muted:#6b6960;--correct-bg:#eef2e8;--correct-col:#788c5d;--wrong-bg:#fbede8;--wrong-col:#c0503a;--radius-sm:6px;--radius-md:10px;--radius-lg:16px;--font-heading:'Poppins',sans-serif;--font-body:'Lora',serif;--font-ui:'Zen Kaku Gothic New',sans-serif;--shadow-sm:0 1px 3px rgba(20,20,19,0.06),0 1px 2px rgba(20,20,19,0.04);--shadow-md:0 4px 12px rgba(20,20,19,0.08),0 2px 4px rgba(20,20,19,0.04);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--color-light);color:var(--color-text);font-family:var(--font-ui);font-weight:400;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px calc(120px + env(safe-area-inset-bottom))}
+  .container{width:100%;max-width:620px}
+  .progress-wrap{margin-bottom:20px}
+  .progress-meta{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+  .progress-count{font-family:var(--font-heading);font-size:11px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-muted);flex:1;text-align:center}
+  .progress-pct{font-family:var(--font-heading);font-size:11px;font-weight:600;color:var(--color-orange)}
+  .progress-track{width:100%;height:4px;background:var(--color-light-gray);border-radius:99px;overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--color-orange),#e8956a);border-radius:99px;transition:width 0.5s cubic-bezier(0.4,0,0.2,1)}
+  .score-row{display:flex;gap:8px;margin-bottom:20px}
+  .score-chip{display:flex;align-items:center;gap:6px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:5px 10px;font-family:var(--font-heading);font-size:12px;font-weight:500;color:var(--color-text-muted)}
+  .score-chip .dot{width:6px;height:6px;border-radius:50%}
+  .score-chip.correct .dot{background:var(--correct-col)}
+  .score-chip.wrong .dot{background:var(--wrong-col)}
+  .score-chip span{font-weight:600;color:var(--color-text)}
+  .question-card{background:white;border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:24px 24px 20px;margin-bottom:12px;box-shadow:var(--shadow-sm)}
+  .card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .category-badge{font-family:var(--font-heading);font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-orange);background:rgba(217,119,87,0.08);border:1px solid rgba(217,119,87,0.2);border-radius:99px;padding:3px 10px}
+  .q-num{font-family:var(--font-heading);font-size:11px;font-weight:500;color:var(--color-mid-gray)}
+  .question-text{font-family:var(--font-body);font-size:16px;font-weight:600;line-height:1.75;color:var(--color-text)}
+  .options{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+  .option{display:flex;align-items:flex-start;gap:12px;background:white;border:1.5px solid var(--color-border);border-radius:var(--radius-md);padding:13px 16px;cursor:pointer;transition:border-color 0.15s,background 0.15s,transform 0.1s;box-shadow:var(--shadow-sm)}
+  .option:hover:not(.disabled){border-color:var(--color-orange);background:rgba(217,119,87,0.03);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+  .option-key{width:26px;height:26px;border-radius:var(--radius-sm);background:var(--color-surface);border:1px solid var(--color-light-gray);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:11px;font-weight:700;color:var(--color-text-muted);flex-shrink:0;transition:all 0.15s}
+  .option-text{font-family:var(--font-ui);font-size:15px;line-height:1.65;color:var(--color-text-muted);flex:1;font-weight:400;padding-top:3px}
+  .option-mark{font-size:15px;flex-shrink:0;padding-top:4px;opacity:0;transition:opacity 0.2s}
+  .option.correct{border-color:var(--correct-col);background:var(--correct-bg);transform:none}
+  .option.correct .option-key{background:var(--correct-col);border-color:var(--correct-col);color:white}
+  .option.correct .option-text{color:var(--color-text);font-weight:500}
+  .option.correct .option-mark{opacity:1;color:var(--correct-col)}
+  .option.wrong{border-color:var(--wrong-col);background:var(--wrong-bg);transform:none}
+  .option.wrong .option-key{background:var(--wrong-col);border-color:var(--wrong-col);color:white}
+  .option.wrong .option-mark{opacity:1;color:var(--wrong-col)}
+  .option.disabled{cursor:default}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(20,20,19,0.45);z-index:100;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)}
+  .modal-overlay.show{display:flex;animation:overlayIn 0.2s ease}
+  .modal-sheet{background:white;border-radius:var(--radius-lg) var(--radius-lg) 0 0;width:100%;max-width:640px;padding:24px 24px calc(24px + env(safe-area-inset-bottom));box-shadow:0 -8px 32px rgba(20,20,19,0.12);animation:sheetUp 0.3s cubic-bezier(0.32,0.72,0,1)}
+  .modal-handle{width:36px;height:4px;background:var(--color-light-gray);border-radius:99px;margin:0 auto 20px}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .modal-status{display:flex;align-items:center;gap:8px}
+  .modal-icon{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+  .modal-overlay.correct-fb .modal-icon{background:var(--correct-col);color:white}
+  .modal-overlay.wrong-fb .modal-icon{background:var(--wrong-col);color:white}
+  .modal-label{font-family:var(--font-heading);font-size:14px;font-weight:700;letter-spacing:0.03em}
+  .modal-overlay.correct-fb .modal-label{color:var(--correct-col)}
+  .modal-overlay.wrong-fb .modal-label{color:var(--wrong-col)}
+  .modal-text{font-family:var(--font-ui);font-size:14px;line-height:1.8;color:var(--color-text-muted);font-weight:400;margin-bottom:20px}
+  .modal-btn{display:flex;align-items:center;justify-content:center;width:100%;padding:13px;border-radius:var(--radius-md);border:none;font-family:var(--font-heading);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s}
+  .modal-overlay.correct-fb .modal-btn{background:var(--correct-col);color:white}
+  .modal-overlay.correct-fb .modal-btn:hover{background:#5f7a46}
+  .modal-overlay.wrong-fb .modal-btn{background:var(--wrong-col);color:white}
+  .modal-overlay.wrong-fb .modal-btn:hover{background:#a03030}
+  @keyframes overlayIn{from{opacity:0}to{opacity:1}}
+  @keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .nav-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-heading);font-size:13px;font-weight:500;border-radius:var(--radius-sm);padding:9px 16px;cursor:pointer;border:1.5px solid;transition:all 0.15s ease}
+  .btn-ghost{border-color:var(--color-border);background:white;color:var(--color-text-muted);box-shadow:var(--shadow-sm)}
+  .btn-ghost:hover:not(:disabled){border-color:var(--color-mid-gray);color:var(--color-text)}
+  .btn-ghost:disabled{opacity:0.3;cursor:default}
+  .btn-primary{border-color:var(--color-orange);background:var(--color-orange);color:white;box-shadow:var(--shadow-sm);display:none}
+  .btn-primary.show{display:inline-flex}
+  .btn-primary:hover{background:#c96744;border-color:#c96744;box-shadow:var(--shadow-md);transform:translateY(-1px)}
+  .result-screen{display:none;animation:fadeUp 0.4s ease}
+  .result-screen.show{display:block}
+  .result-card{background:white;border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:32px 28px;box-shadow:var(--shadow-md);text-align:center}
+  .result-icon{width:56px;height:56px;background:rgba(217,119,87,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 20px}
+  .result-label{font-family:var(--font-heading);font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--color-mid-gray);margin-bottom:8px}
+  .result-score{font-family:var(--font-heading);font-size:60px;font-weight:700;color:var(--color-orange);line-height:1;margin-bottom:2px}
+  .result-denom{font-family:var(--font-heading);font-size:14px;color:var(--color-mid-gray);margin-bottom:20px}
+  .result-divider{height:1px;background:var(--color-light-gray);margin:20px 0}
+  .result-message{font-family:var(--font-body);font-size:18px;font-weight:500;color:var(--color-text);margin-bottom:8px}
+  .result-sub{font-family:var(--font-ui);font-size:13px;color:var(--color-text-muted);line-height:1.8;font-weight:300;white-space:pre-line;margin-bottom:24px}
+  .result-bar-wrap{background:var(--color-surface);border-radius:var(--radius-md);padding:16px;margin-bottom:24px}
+  .result-bar-label{display:flex;justify-content:space-between;font-family:var(--font-heading);font-size:11px;font-weight:500;color:var(--color-text-muted);margin-bottom:8px}
+  .result-bar-track{height:6px;background:var(--color-light-gray);border-radius:99px;overflow:hidden}
+  .result-bar-fill{height:100%;background:linear-gradient(90deg,var(--color-orange),#e8956a);border-radius:99px;transition:width 1s cubic-bezier(0.4,0,0.2,1)}
+  .fill-context{padding:4px 0 16px;margin-bottom:0;font-family:var(--font-ui);font-size:15px;line-height:2.2;color:var(--color-text-muted);font-weight:400;white-space:pre-wrap}
+  .fill-blank{display:inline-block;background:white;border:1.5px solid var(--color-orange);border-radius:4px;padding:1px 14px;color:var(--color-orange);font-weight:500;letter-spacing:0.05em}
+  .fill-blank.filled-correct{background:var(--correct-bg);border-color:var(--correct-col);color:var(--correct-col)}
+  .fill-blank.filled-wrong{background:var(--wrong-bg);border-color:var(--wrong-col);color:var(--wrong-col);text-decoration:line-through}
+  .type-badge{font-family:var(--font-heading);font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-blue);background:rgba(106,155,204,0.1);border:1px solid rgba(106,155,204,0.25);border-radius:99px;padding:3px 10px;margin-left:6px}
+  #quiz-area{animation:fadeUp 0.35s ease}
+  .start-screen{padding:12px 0 0;animation:fadeUp 0.4s ease}
+  .start-screen.hidden{display:none}
+  .start-eyebrow{font-family:var(--font-heading);font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--color-orange);margin-bottom:10px}
+  .start-title{font-family:var(--font-heading);font-size:26px;font-weight:700;color:var(--color-dark);line-height:1.25;margin-bottom:10px}
+  .start-divider{height:1px;background:var(--color-light-gray);margin-bottom:20px}
+  .start-section-label{font-family:var(--font-heading);font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-mid-gray);margin-bottom:12px}
+  .mode-cards{display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
+  .mode-card{display:flex;align-items:center;gap:16px;background:white;border:1.5px solid var(--color-border);border-radius:var(--radius-md);padding:16px 18px;cursor:pointer;transition:all 0.15s ease;box-shadow:var(--shadow-sm);text-align:left;width:100%}
+  .mode-card:hover{border-color:var(--color-orange);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+  .mode-card:active{transform:translateY(0)}
+  .mode-card.disabled{opacity:0.4;cursor:not-allowed;pointer-events:none}
+  .mode-icon{width:42px;height:42px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+  .mode-icon.orange{background:rgba(217,119,87,0.1)}
+  .mode-icon.blue{background:rgba(106,155,204,0.1)}
+  .mode-icon.green{background:rgba(120,140,93,0.1)}
+  .mode-info{flex:1}
+  .mode-title{font-family:var(--font-heading);font-size:14px;font-weight:600;color:var(--color-dark);margin-bottom:2px}
+  .mode-sub{font-family:var(--font-ui);font-size:12px;color:var(--color-text-muted)}
+  .mode-arrow{color:var(--color-mid-gray);font-size:16px;flex-shrink:0}
+  .btn-exit{background:none;border:none;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--color-mid-gray);cursor:pointer;transition:all 0.15s;flex-shrink:0;padding:0}
+  .btn-exit:hover{background:var(--color-light-gray);color:var(--color-dark)}
+  .exit-sheet{background:white;border-radius:var(--radius-lg);width:100%;max-width:360px;padding:28px 24px 24px;box-shadow:var(--shadow-md);text-align:center;animation:fadeUp 0.25s ease}
+  .exit-icon{font-size:32px;margin-bottom:14px}
+  .exit-title{font-family:var(--font-heading);font-size:16px;font-weight:700;color:var(--color-dark);margin-bottom:8px}
+  .exit-sub{font-family:var(--font-ui);font-size:13px;color:var(--color-text-muted);line-height:1.7;margin-bottom:20px}
+  .memory-chart-wrap{display:flex;align-items:center;gap:24px;background:white;border:1px solid var(--color-border);border-radius:var(--radius-md);padding:20px;box-shadow:var(--shadow-sm)}
+  .donut-wrap{flex-shrink:0}
+  .memory-legend{flex:1;display:flex;flex-direction:column;gap:9px}
+  .legend-row{display:flex;align-items:center;gap:8px}
+  .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .legend-label{font-family:var(--font-ui);font-size:13px;color:var(--color-text-muted);flex:1}
+  .legend-count{font-family:var(--font-heading);font-size:13px;font-weight:600;color:var(--color-dark);min-width:36px;text-align:right}
+  .reset-wrap{margin-top:16px;text-align:center}
+  .btn-reset{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-heading);font-size:12px;font-weight:500;color:var(--color-text-muted);background:none;border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:7px 14px;cursor:pointer;transition:all 0.15s}
+  .btn-reset:hover{border-color:var(--wrong-col);color:var(--wrong-col);background:var(--wrong-bg)}
+  .reset-sheet{background:white;border-radius:var(--radius-lg);width:100%;max-width:360px;padding:28px 24px 24px;box-shadow:var(--shadow-md);text-align:center;animation:fadeUp 0.25s ease}
+  .total-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(217,119,87,0.08);border:1px solid rgba(217,119,87,0.2);border-radius:99px;padding:3px 12px;font-family:var(--font-heading);font-size:11px;font-weight:600;color:var(--color-orange);margin-bottom:16px}
+  .custom-section-label{font-family:var(--font-heading);font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-mid-gray);margin-bottom:10px}
+  .custom-count-wrap{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px}
+  .custom-count-btn{width:40px;height:40px;border-radius:var(--radius-sm);border:1.5px solid var(--color-border);background:white;font-family:var(--font-heading);font-size:14px;font-weight:600;color:var(--color-text-muted);cursor:pointer;transition:all 0.15s;box-shadow:var(--shadow-sm)}
+  .custom-count-btn:hover{border-color:var(--color-orange);color:var(--color-orange);background:rgba(217,119,87,0.05)}
+  .custom-count-display{font-family:var(--font-heading);font-size:36px;font-weight:700;color:var(--color-orange);min-width:72px;text-align:center;line-height:1}
+  .custom-cat-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px}
+  .custom-cat-chip{display:inline-flex;align-items:center;gap:5px;border-radius:99px;padding:6px 12px;font-family:var(--font-heading);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s;border:1.5px solid var(--color-border);background:white;color:var(--color-text-muted);user-select:none}
+  .custom-cat-chip:hover{border-color:var(--color-orange);color:var(--color-orange)}
+  .custom-cat-chip.active{border-color:var(--color-orange);background:rgba(217,119,87,0.08);color:var(--color-orange)}
+  .custom-cat-chip .chip-count{background:rgba(217,119,87,0.15);border-radius:99px;padding:1px 6px;font-size:10px}
+  .custom-cat-chip.active .chip-count{background:rgba(217,119,87,0.2)}
+  .custom-tag-toggle{font-family:var(--font-heading);font-size:11px;font-weight:500;color:var(--color-text-muted);background:none;border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:3px 8px;cursor:pointer;transition:all 0.15s}
+  .custom-tag-toggle:hover{border-color:var(--color-orange);color:var(--color-orange)}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="start-screen" id="start-screen">
+    <div class="start-eyebrow">UX Design</div>
+    <div class="start-title">UXデザイン検定クイズ</div>
+    <div class="total-badge">📚 全 <span id="total-count">53</span> 問収録</div>
+    <div class="start-divider"></div>
+    <div class="start-section-label">学習モードを選ぶ</div>
+    <div class="mode-cards">
+      <button class="mode-card" onclick="beginQuiz('all')">
+        <div class="mode-icon orange">📋</div>
+        <div class="mode-info"><div class="mode-title">全ての問題</div><div class="mode-sub" id="all-sub">全53問すべてに挑戦する</div></div>
+        <div class="mode-arrow">›</div>
+      </button>
+      <button class="mode-card" onclick="beginQuiz('random')">
+        <div class="mode-icon blue">🎲</div>
+        <div class="mode-info"><div class="mode-title">ランダム 20問</div><div class="mode-sub">全問からランダムに20問を出題</div></div>
+        <div class="mode-arrow">›</div>
+      </button>
+      <button class="mode-card" id="weak-btn" onclick="beginQuiz('weak')">
+        <div class="mode-icon green">🔁</div>
+        <div class="mode-info"><div class="mode-title">間違えた問題</div><div class="mode-sub" id="weak-sub">まだデータがありません</div></div>
+        <div class="mode-arrow">›</div>
+      </button>
+      <button class="mode-card" onclick="openCustomModal()">
+        <div class="mode-icon" style="background:rgba(120,93,140,0.1)">⚙️</div>
+        <div class="mode-info"><div class="mode-title">カスタム出題</div><div class="mode-sub">問題数・カテゴリを自分で設定</div></div>
+        <div class="mode-arrow">›</div>
+      </button>
+    </div>
+    <div class="start-divider"></div>
+    <div class="start-section-label">記憶度</div>
+    <div class="memory-chart-wrap">
+      <div class="donut-wrap">
+        <svg viewBox="0 0 120 120" width="120" height="120">
+          <circle cx="60" cy="60" r="44" fill="none" stroke="var(--color-light-gray)" stroke-width="16"/>
+          <g id="donut-arcs"></g>
+        </svg>
+      </div>
+      <div class="memory-legend">
+        <div class="legend-row"><span class="legend-dot" style="background:#2d5fa8"></span><span class="legend-label">完璧</span><span class="legend-count" id="mem-perfect">0問</span></div>
+        <div class="legend-row"><span class="legend-dot" style="background:#5b9bd5"></span><span class="legend-label">覚えた</span><span class="legend-count" id="mem-learned">0問</span></div>
+        <div class="legend-row"><span class="legend-dot" style="background:#8ec4ef"></span><span class="legend-label">うろ覚え</span><span class="legend-count" id="mem-vague">0問</span></div>
+        <div class="legend-row"><span class="legend-dot" style="background:#d97757"></span><span class="legend-label">苦手</span><span class="legend-count" id="mem-weak">0問</span></div>
+        <div class="legend-row"><span class="legend-dot" style="background:#dedad0"></span><span class="legend-label">未解答</span><span class="legend-count" id="mem-unanswered">53問</span></div>
+      </div>
+    </div>
+    <div class="reset-wrap">
+      <button class="btn-reset" onclick="confirmReset()">🗑 学習履歴をリセット</button>
+    </div>
+  </div>
+
+  <div id="quiz-area" style="display:none">
+    <div class="progress-wrap">
+      <div class="progress-meta">
+        <button class="btn-exit" onclick="confirmExit()">✕</button>
+        <span class="progress-count" id="progress-text">1 / 53</span>
+        <span class="progress-pct" id="progress-pct">0%</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+    <div class="score-row">
+      <div class="score-chip correct"><div class="dot"></div>正解 <span id="score-correct">0</span></div>
+      <div class="score-chip wrong"><div class="dot"></div>不正解 <span id="score-wrong">0</span></div>
+    </div>
+    <div class="question-card">
+      <div class="card-top">
+        <div class="category-badge" id="q-category"></div>
+        <div class="q-num" id="q-num"></div>
+      </div>
+      <div class="question-text" id="q-text"></div>
+      <div class="fill-context" id="fill-context" style="display:none"></div>
+    </div>
+    <div class="options" id="options"></div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" id="btn-prev" onclick="prevQuestion()">← 前の問題</button>
+      <button class="btn btn-primary" id="btn-next" onclick="nextQuestion()">次の問題へ →</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header"><div class="modal-status"><div class="modal-icon" id="modal-icon"></div><div class="modal-label" id="modal-label"></div></div></div>
+      <div class="modal-text" id="modal-text"></div>
+      <button class="modal-btn" id="modal-btn" onclick="closeModal()">次の問題へ →</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="exit-modal" style="display:none;align-items:center;padding:24px;">
+    <div class="exit-sheet">
+      <div class="exit-icon">🚪</div>
+      <div class="exit-title">回答を終了しますか？</div>
+      <div class="exit-sub">途中まで回答した結果は記録されます。<br>苦手問題データも保持されます。</div>
+      <button class="modal-btn" onclick="exitQuiz()" style="background:var(--wrong-col);margin-bottom:10px;">終了してトップへ戻る</button>
+      <button class="btn btn-ghost" onclick="cancelExit()" style="width:100%;justify-content:center;">続ける</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="reset-modal" style="display:none;align-items:center;padding:24px;">
+    <div class="reset-sheet">
+      <div class="exit-icon">🗑</div>
+      <div class="exit-title">学習履歴をリセットしますか？</div>
+      <div class="exit-sub">すべての解答履歴・記憶度・苦手データが削除されます。<br>この操作は取り消せません。</div>
+      <button class="modal-btn" onclick="executeReset()" style="background:var(--wrong-col);margin-bottom:10px;">リセットする</button>
+      <button class="btn btn-ghost" onclick="cancelReset()" style="width:100%;justify-content:center;">キャンセル</button>
+    </div>
+  </div>
+
+  <!-- カスタムモーダル -->
+  <div class="modal-overlay" id="custom-modal">
+    <div class="modal-sheet" style="max-height:90vh;overflow-y:auto;">
+      <div class="modal-handle"></div>
+      <div style="font-family:var(--font-heading);font-size:16px;font-weight:700;color:var(--color-dark);margin-bottom:4px;">⚙️ カスタム出題</div>
+      <div style="font-family:var(--font-ui);font-size:13px;color:var(--color-text-muted);margin-bottom:20px;">問題数とカテゴリを自由に設定できます</div>
+
+      <div class="custom-section-label">出題数</div>
+      <div class="custom-count-wrap">
+        <button class="custom-count-btn" onclick="adjustCount(-5)">−5</button>
+        <button class="custom-count-btn" onclick="adjustCount(-1)">−1</button>
+        <div class="custom-count-display" id="custom-count-display">20</div>
+        <button class="custom-count-btn" onclick="adjustCount(1)">+1</button>
+        <button class="custom-count-btn" onclick="adjustCount(5)">+5</button>
+      </div>
+      <div style="font-family:var(--font-ui);font-size:12px;color:var(--color-text-muted);text-align:center;margin-bottom:20px;" id="custom-count-hint">全109問中 20問を出題</div>
+
+      <div class="custom-section-label" style="display:flex;align-items:center;justify-content:space-between;">
+        カテゴリ
+        <div style="display:flex;gap:6px;">
+          <button class="custom-tag-toggle" onclick="selectAllCats()">すべて選択</button>
+          <button class="custom-tag-toggle" onclick="clearAllCats()">すべて解除</button>
+        </div>
+      </div>
+      <div class="custom-cat-grid" id="custom-cat-grid"></div>
+      <div style="font-family:var(--font-ui);font-size:12px;color:var(--color-text-muted);margin:8px 0 20px;text-align:center;" id="custom-cat-hint">選択中のカテゴリから 20問</div>
+
+      <button class="modal-btn" id="custom-start-btn" onclick="startCustomQuiz()" style="background:var(--color-orange);margin-bottom:10px;">この設定で始める →</button>
+      <button class="btn btn-ghost" onclick="closeCustomModal()" style="width:100%;justify-content:center;">キャンセル</button>
+    </div>
+  </div>
+
+  <div class="result-screen" id="result-screen">
+    <div class="result-card">
+      <div class="result-icon" id="result-icon">🎯</div>
+      <div class="result-label">Result</div>
+      <div class="result-score" id="result-score"></div>
+      <div class="result-denom" id="result-denom"></div>
+      <div class="result-bar-wrap">
+        <div class="result-bar-label"><span>正答率</span><span id="result-pct-label">0%</span></div>
+        <div class="result-bar-track"><div class="result-bar-fill" id="result-bar-fill" style="width:0%"></div></div>
+      </div>
+      <div class="result-divider"></div>
+      <div class="result-message" id="result-message"></div>
+      <div class="result-sub" id="result-sub"></div>
+      <button class="btn btn-primary show" onclick="restartQuiz()" style="width:100%;justify-content:center;margin-bottom:10px;">もう一度このモードで挑戦</button>
+      <button class="btn btn-ghost show" onclick="goHome()" style="width:100%;justify-content:center;">← モード選択に戻る</button>
+    </div>
+  </div>
+
+</div>
+<script>
+// ─── 問題データ ───────────────────────────────────────────────
+const questions = [
+  // ── 既存問題（ID 0-28）──
+  {id:0,category:"UXハニカム構造",text:"Peter Morvilleが提唱したUXハニカム構造の7要素のうち、中央に位置し他の6要素を統合するものはどれか？",options:["Usable（使いやすさ）","Valuable（価値）","Useful（有用性）","Desirable（魅力・欲求）"],answer:1,explanation:"Valuable（価値）が中央に配置され、他の6要素すべてを統合します。例えば地図アプリが「使いやすい・見つけやすい・信頼できる」を備えていても、ユーザーの移動体験を豊かにする価値がなければ意味をなしません。ビジネスとユーザー双方に価値をもたらすことがUXの根本目標です。"},
+  {id:1,category:"UXハニカム構造",text:"「障害・年齢・環境に関わらず誰でも使えること」を指すハニカム構造の要素はどれか？",options:["Findable（発見しやすさ）","Credible（信頼性）","Accessible（アクセシビリティ）","Usable（使いやすさ）"],answer:2,explanation:"Accessible（アクセシビリティ）は、多様なユーザーがサービスを利用できるかを問う要素です。例えば画像に代替テキストを付与して視覚障害者がスクリーンリーダーで読めるようにしたり、文字サイズを拡大できる設計が該当します。"},
+  {id:2,category:"デザイン思考",text:"デザイン思考の5ステップを正しい順序で並べたものはどれか？",options:["Define→Empathize→Ideate→Test→Prototype","Empathize→Define→Ideate→Prototype→Test","Ideate→Empathize→Define→Prototype→Test","Empathize→Ideate→Define→Test→Prototype"],answer:1,explanation:"正しい順序はEmpathize→Define→Ideate→Prototype→Testです。例えば「高齢者向け薬管理アプリ」を作る場合、まず利用者に同行取材し（Empathize）、「飲み忘れの不安」という課題を定義し（Define）、通知アイデアを出し（Ideate）、紙で画面を作り（Prototype）、実際に試してもらいます（Test）。"},
+  {id:3,category:"デザイン思考",text:"デザイン思考のDefine（定義）フェーズで使われる「HMW」とは何の略か？",options:["How Much Worth（どれだけの価値があるか）","How Might We（どうすれば〜できるか）","Human Mind Work（人間の思考の働き）","How Many Ways（何通りの方法があるか）"],answer:1,explanation:"HMWは「How Might We（どうすれば〜できるか）」の略です。例えば「高齢者が薬を飲み忘れる」という課題を「どうすれば薬を飲むことを楽しみにできるか？」と前向きな問いに変換し、Ideateフェーズのアイデア発想を引き出します。"},
+  {id:4,category:"エンパシーマップ",text:"エンパシーマップの4象限として正しいものはどれか？",options:["Think & Feel / Hear / See / Say & Do","Want / Need / Fear / Goal","Gain / Pain / Job / Outcome","Who / What / Why / How"],answer:0,explanation:"エンパシーマップはThink & Feel / Hear / See / Say & Doの4象限でユーザーを理解します。例えば通勤者なら「遅刻しないか不安（Think）」「同僚から残業当たり前と聞く（Hear）」「満員電車を見る（See）」「早めに出ます、と言いながら実は寝坊している（Say & Do）」と整理できます。"},
+  {id:5,category:"エンパシーマップ",text:"エンパシーマップの主な目的として最も適切なものはどれか？",options:["ビジネスモデルの収益性を分析する","ユーザーの内面・感情・文脈を深く理解する","UIの操作性をチェックリストで評価する","競合サービスと機能を比較する"],answer:1,explanation:"エンパシーマップはユーザーへの共感を深めるためのツールです。例えば「健康アプリが続かない人」を分析すると、「面倒くさいと感じている（Think）」「SNSで挫折談を見かける（Hear）」など感情・文脈を可視化でき、機能設計よりも先に本質的な障壁を発見できます。"},
+  {id:6,category:"ユーザーストーリーマッピング",text:"ユーザーストーリーマッピングを提唱したのは誰か？",options:["Jakob Nielsen（ヤコブ・ニールセン）","Jeff Patton（ジェフ・パットン）","Peter Morville（ピーター・モービル）","Don Norman（ドン・ノーマン）"],answer:1,explanation:"Jeff Patton（ジェフ・パットン）が提唱しました。例えばECサイトなら「商品を探す→カートに入れる→購入する→受け取る」という横軸のフローに対し、各ステップに必要な機能を縦に並べ、リリース1版に含める最低限のMVPラインを引くことができます。"},
+  {id:7,category:"ユーザーストーリーマッピング",text:"ユーザーストーリーマッピングの「横軸」が表すものはどれか？",options:["機能の優先度（高→低）","ユーザーの行動の時系列フロー","開発チームの担当範囲","ビジネス価値の大きさ"],answer:1,explanation:"横軸はユーザーの行動を時系列で表します。例えば旅行予約サービスなら「目的地を調べる→日程を選ぶ→宿を探す→予約する→当日チェックイン」という流れが横軸になり、縦軸に各アクティビティの詳細ストーリーや優先度が並びます。"},
+  {id:8,category:"ニールセン 10ヒューリスティックス",text:"「エラーメッセージは平易な言葉で、原因と解決策をセットで伝える」に対応するヒューリスティックスはどれか？",options:["Error Prevention（エラーの防止）","Help Users Recognize, Diagnose, and Recover from Errors（エラーの認識・診断・回復の支援）","Visibility of System Status（システム状態の可視化）","Help and Documentation（ヘルプとドキュメント）"],answer:1,explanation:"第9原則「エラーの認識・診断・回復の支援」です。例えばパスワード入力で「エラー」と出すだけでなく「パスワードは8文字以上で入力してください」と原因と解決策を示すことが該当します。第5原則のError Prevention（エラーの防止）は確認ダイアログで誤操作を事前に防ぐことです。"},
+  {id:9,category:"ニールセン 10ヒューリスティックス",text:"「ユーザーに覚えさせず、見れば分かるようにする」原則はどれか？",options:["Consistency and Standards（一貫性と標準化）","Flexibility and Efficiency of Use（柔軟性と効率性）","Recognition Rather Than Recall（想起より認識）","Aesthetic and Minimalist Design（美的・ミニマルなデザイン）"],answer:2,explanation:"第6原則「Recognition Rather Than Recall（想起より認識）」です。例えばアイコンにラベルを添えて意味を一目で分かるようにしたり、ECサイトの検索窓に「キーワードを入力」とプレースホルダーを置いて操作方法を記憶させないようにすることが該当します。"},
+  {id:10,category:"ニールセン ユーザビリティ5定義",text:"ニールセンのユーザビリティ5定義に含まれないものはどれか？",options:["Learnability（学習しやすさ）","Memorability（再学習しやすさ）","Desirability（魅力・欲求）","Errors（エラー許容性）"],answer:2,explanation:"Desirability（魅力・欲求）はニールセンの5定義には含まれず、ハニカム構造の要素です。5定義はLearnability・Efficiency・Memorability・Errors・Satisfactionです。例えば銀行の窓口システムは使いやすくても「魅力的」とは言われませんが、ニールセン的には高いユーザビリティを持ちえます。"},
+  {id:11,category:"ISO定義",text:"ISO 9126が定義するソフトウェア品質の6特性として正しいものはどれか？",options:["機能性・信頼性・使用性・効率性・保守性・移植性","有効性・効率性・満足度・リスク回避・文脈網羅性・安全性","有用性・使いやすさ・発見性・信頼性・魅力・価値","学習性・効率性・記憶性・エラー・満足度・安全性"],answer:0,explanation:"ISO 9126の6特性は機能性・信頼性・使用性・効率性・保守性・移植性です。例えば「決済ボタンが押せる（機能性）」「99.9%稼働する（信頼性）」「直感的に使える（使用性）」「応答が速い（効率性）」「バグ修正が容易（保守性）」「iOSとAndroid両対応（移植性）」という具合に評価します。"},
+  {id:12,category:"ISO定義",text:"ISO 25010（ISO 9126の後継規格）で新たに追加・強化された概念として最も適切なものはどれか？",options:["移植性（Portability）","使用品質（Quality in Use）とセキュリティ（Security）","機能性（Functionality）","保守性（Maintainability）"],answer:1,explanation:"ISO 25010では「Quality in Use（利用時品質）」が強化され、リスク回避・文脈網羅性が追加されました。またセキュリティが独立した特性として明確化されています。例えば医療アプリなら「操作ミスで誤投与が起きないか（リスク回避）」「在宅・病院どちらでも使えるか（文脈網羅性）」が評価軸に加わります。"},
+  {id:13,category:"ビジネスモデルキャンバス",text:"ビジネスモデルキャンバスの9つのブロックのうち、中央に位置する最も重要な要素はどれか？",options:["Customer Segments（顧客セグメント）","Revenue Streams（収益の流れ）","Value Propositions（価値提案）","Key Activities（主要活動）"],answer:2,explanation:"Value Propositions（価値提案）がキャンバスの中央に位置します。例えばUberの価値提案は「すぐ捕まるタクシーを簡単決済で」です。左側の主要活動・リソース・パートナーはこの価値を生み出すための仕組みであり、右側の顧客セグメント・チャネル・顧客関係はその価値を届ける方法です。"},
+  {id:14,category:"バリュープロポジションキャンバス",text:"バリュープロポジションキャンバスの「顧客プロフィール（Customer Profile）」を構成する3要素として正しいものはどれか？",options:["Products & Services / Gain Creators / Pain Relievers","Customer Jobs（顧客がやりたいこと）/ Gains（得たい利益）/ Pains（悩み・障壁）","Key Resources / Key Activities / Key Partners","Channels / Customer Relationships / Revenue Streams"],answer:1,explanation:"顧客プロフィールはCustomer Jobs / Gains / Painsの3要素です。例えば「忙しい親（ペルソナ）」なら、Jobs＝子どもに栄養バランスの良い食事を与えたい、Pains＝料理する時間がない、Gains＝健康的な食事を手軽に用意できる安心感、となります。"},
+  {id:15,category:"UXハニカム構造",text:"Peter Morvilleが提唱したUXハニカムにおける要素の組み合わせとして正しいものはどれか。",options:["Credible（信頼できる）/ Desirable（魅力的）/ Findable（見つけやすい）","Efficient（効率的）/ Safe（安全）/ Learnable（学習しやすい）","Accessible（アクセシブル）/ Responsive（応答的）/ Scalable（拡張可能）","Reliable（信頼性）/ Portable（移植性）/ Maintainable（保守性）"],answer:0,explanation:"UXハニカムの7要素はUseful・Usable・Desirable・Findable・Accessible・Credible・Valuableです。例えばニュースサイトなら「記事が探せる（Findable）」「信頼できる情報源と感じる（Credible）」「デザインに惹かれる（Desirable）」がすべて揃うことで価値（Valuable）が生まれます。"},
+  {id:16,category:"ニールセン ユーザビリティ5定義",text:"Jakob Nielsenが定義したユーザビリティの5要素として正しい組み合わせはどれか。",options:["Learnability（学習しやすさ）/ Efficiency（効率性）/ Memorability（記憶しやすさ）","Safety（安全性）/ Portability（移植性）/ Reliability（信頼性）","Scalability（拡張性）/ Compatibility（互換性）/ Maintainability（保守性）","Credibility（信頼性）/ Accessibility（アクセシビリティ）/ Desirability（魅力）"],answer:0,explanation:"5要素はLearnability・Efficiency・Memorability・Errors・Satisfactionです。Aの3つはすべて含まれます。例えばSlackは「初めて使う人でも直感的（Learnability）」「慣れるとキーボードショートカットで速い（Efficiency）」「しばらく使わなくても操作を思い出せる（Memorability）」などで評価できます。"},
+  {id:17,category:"ニールセン 10ヒューリスティックス",text:"Jakob Nielsenのヒューリスティック評価の原則として正しい組み合わせはどれか。",options:["Visibility of system status / Consistency and standards / Error prevention","Accessibility / Reliability / Safety","Value / Desirability / Credibility","Revenue Streams / Channels / Key Activities"],answer:0,explanation:"10ヒューリスティックスから正しい3つはAです。例えば「ファイルをアップロード中にプログレスバーを表示（Visibility）」「保存ボタンが全画面で右下に統一（Consistency）」「削除前に確認ダイアログを出す（Error prevention）」が具体的な実践例です。"},
+  {id:18,category:"ISO定義",text:"ISO 9126およびISO 25010におけるソフトウェア品質特性の組み合わせとして正しいものはどれか。",options:["Functionality（機能性）/ Reliability（信頼性）/ Usability（使用性）","Revenue（収益）/ Channel（流通）/ Partner（パートナー）","Desirability（魅力）/ Findability（見つけやすさ）/ Credibility（信頼）","Learnability（学習しやすさ）/ Memorability（記憶しやすさ）/ Efficiency（効率性）"],answer:0,explanation:"ISO 9126/25010の品質特性はAの3つを含みます。例えばオンライン銀行なら「送金機能が正確に動く（機能性）」「障害なく24時間稼働する（信頼性）」「高齢者でも振込手順が分かる（使用性）」という観点で評価します。BはBMC、CはUXハニカム、Dはニールセンの用語です。"},
+  {id:19,category:"ビジネスモデルキャンバス",text:"Alexander Osterwalderのビジネスモデルキャンバスの構成要素として正しい組み合わせはどれか。",options:["Customer Segments（顧客セグメント）/ Value Propositions（価値提案）/ Revenue Streams（収益の流れ）","Findable（見つけやすい）/ Usable（使いやすい）/ Desirable（魅力）","Learnability（学習しやすさ）/ Efficiency（効率性）/ Memorability（記憶しやすさ）","Think（考える）/ See（見る）/ Feel（感じる）"],answer:0,explanation:"ビジネスモデルキャンバスは9ブロックで構成されます。例えばSpotifyなら、Customer Segments＝音楽好きな若者層、Value Propositions＝どこでも無制限に音楽が聴ける、Revenue Streams＝月額サブスクリプション＋広告収入、という形で整理できます。"},
+  {id:20,category:"バリュープロポジションキャンバス",text:"Alexander Osterwalderのバリュープロポジションキャンバスにおける顧客側の要素として正しい組み合わせはどれか。",options:["Customer Jobs（顧客のジョブ）/ Pains（顧客の悩み）/ Gains（顧客の得たい価値）","Key Resources（主要リソース）/ Key Partners（主要パートナー）/ Cost Structure（コスト構造）","Visibility（可視性）/ Consistency（一貫性）/ Feedback（フィードバック）","Learnability（学習しやすさ）/ Efficiency（効率性）/ Memorability（記憶しやすさ）"],answer:0,explanation:"顧客プロフィールはCustomer Jobs・Pains・Gainsの3要素です。例えばフリーランサーなら、Jobs＝確定申告を終わらせたい、Pains＝税知識がなくて不安・時間がかかる、Gains＝手軽に正確に申告できる安心感、と整理できます。"},
+  {id:21,type:"fill",category:"UXハニカム構造",context:"Peter Morvilleが提唱したUXハニカムでは、UXは7つの要素から構成される。\n\nUsable（使いやすい）\nUseful（役に立つ）\nFindable（見つけやすい）\nAccessible（アクセシブル）\nCredible（信頼できる）\nDesirable（魅力的）\n＿＿＿＿",blank:"＿＿＿＿",options:["Valuable（価値がある）","Efficient（効率的）","Reliable（信頼性）","Portable（移植性）"],answer:0,explanation:"7つ目はValuable（価値がある）です。中央に位置し他の6要素を統合します。例えば医療情報サイトが「使いやすく・信頼できる・見つけやすい」でも、ユーザーの健康不安を解消する価値がなければ存在意義がありません。"},
+  {id:22,type:"fill",category:"デザイン思考",context:"IDEOなどが提唱するデザイン思考のプロセスは\n\nEmpathize（共感）\nDefine（問題定義）\n＿＿＿＿\nPrototype（プロトタイプ）\nTest（テスト）",blank:"＿＿＿＿",options:["Ideate（アイデア創出）","Deploy（実装）","Launch（リリース）","Measure（測定）"],answer:0,explanation:"3番目のステップはIdeate（アイデア創出）です。例えば「病院の待ち時間が苦痛」という課題に対して「待ち時間をゲーム化する」「診察進捗をリアルタイム表示する」「院内カフェで待てるようにする」など、判断を保留したまま幅広くアイデアを出します。"},
+  {id:23,type:"fill",category:"エンパシーマップ",context:"エンパシーマップではユーザー理解のために以下の要素を整理する。\n\nThink & Feel（考えていること・感じていること）\nSee（見ているもの）\nHear（聞いているもの）\n＿＿＿＿",blank:"＿＿＿＿",options:["Say & Do（言っていること・していること）","Needs（ニーズ）","Tasks（タスク）","Goals（目標）"],answer:0,explanation:"4つ目はSay & Do（言っていること・していること）です。例えばダイエットアプリのユーザーが「毎日記録する！（Say）」と言いながら実際には3日坊主（Do）という矛盾は、Think & Feelの「続けるのが辛い」という感情との整合性から重要なインサイトを生み出します。"},
+  {id:24,type:"fill",category:"ニールセン ユーザビリティ5定義",context:"Jakob Nielsenはユーザビリティを以下の5要素で定義した。\n\nLearnability（学習しやすさ）\nEfficiency（効率性）\nMemorability（記憶しやすさ）\nErrors（エラーの少なさ）\n＿＿＿＿",blank:"＿＿＿＿",options:["Satisfaction（満足度）","Reliability（信頼性）","Accessibility（アクセシビリティ）","Value（価値）"],answer:0,explanation:"5つ目はSatisfaction（満足度）です。例えばiPhoneは操作が習得しやすく（Learnability）、慣れると素早く使え（Efficiency）、久々に使っても迷わず（Memorability）、誤操作しにくく（Errors）、使っていて気持ちいい（Satisfaction）という5要素をバランスよく満たしています。"},
+  {id:25,type:"fill",category:"ニールセン 10ヒューリスティックス",context:"ヒューリスティック評価の原則の1つは\n\nVisibility of system status\n＿＿＿＿",blank:"＿＿＿＿",options:["システム状態の可視性","エラー防止","一貫性と標準","柔軟性と効率性"],answer:0,explanation:"Visibility of system statusは「システム状態の可視性」です。例えばメール送信中に「送信中…」のスピナーを表示したり、ファイルのアップロード進捗を%で示したりすることが該当します。ユーザーが「今何が起きているか」を常に把握できる状態にすることが目的です。"},
+  {id:26,type:"fill",category:"ISO定義",context:"ISO 9126・ISO 25010においてソフトウェア品質は以下の観点で捉える。\n\nInternal quality（内部品質）\nExternal quality（外部品質）\n＿＿＿＿",blank:"＿＿＿＿",options:["Quality in use（利用時品質）","Service quality（サービス品質）","User quality（ユーザー品質）","Product quality（製品品質）"],answer:0,explanation:"3つ目はQuality in use（利用時品質）です。内部品質はコードの品質、外部品質は動作の品質ですが、利用時品質は「実際の使用場面での価値」を評価します。例えばナビアプリが正確に動いても（外部品質）、運転中に操作が難しければ利用時品質は低いと評価されます。"},
+  {id:27,type:"fill",category:"ビジネスモデルキャンバス",context:"Alexander Osterwalderのビジネスモデルキャンバスでは\n\nCustomer Segments（顧客セグメント）\nValue Propositions（価値提案）\n＿＿＿＿",blank:"＿＿＿＿",options:["Customer Relationships（顧客との関係）","Customer Experience（顧客体験）","Customer Success（顧客成功）","Customer Journey（顧客ジャーニー）"],answer:0,explanation:"Customer Relationships（顧客との関係）はキャンバスの9ブロックの1つです。例えばNetflixは「アルゴリズムによる自動おすすめ（セルフサービス）」でパーソナルな関係を構築し、AWSはエンタープライズ向けに「専任サポート担当（個別アシスト）」という関係を持つなど、セグメントごとに異なる関係を定義します。"},
+  {id:28,type:"fill",category:"バリュープロポジションキャンバス",context:"顧客理解の要素は\n\nCustomer Jobs（顧客のジョブ）\n＿＿＿＿\nGains（顧客の得たい価値）",blank:"＿＿＿＿",options:["Pains（顧客の悩み）","Needs（ニーズ）","Problems（問題）","Barriers（障害）"],answer:0,explanation:"2つ目はPains（顧客の悩み）です。例えば「海外旅行の荷造りをしたい（Job）」という場面では、Pains＝何を持っていくか毎回迷う・荷物が重くなりすぎる、Gains＝ストレスなくコンパクトに準備できる安心感、となります。Pain Relieversでこの悩みを解消する製品・サービスを設計します。"},
+
+  // ── 新規追加問題（ID 29-52）──
+  {id:29,category:"HCD",text:"ISO 9241-210で定義されるHCDの特徴として最も適切なものはどれか？",options:["デザイナーの感覚を重視する","技術要件を優先して設計する","ユーザーのニーズや状況に基づき設計を進める","コスト削減を最優先とする"],answer:2,explanation:"ISO 9241-210はユーザーの要求・利用状況理解を軸に設計するHCDの国際規格です。例えば医療システムを設計する際、医師や患者の実際の利用状況を調査し、ニーズを明確化した上で設計することが求められます。"},
+  {id:30,category:"HCD",text:"HCDの対象ユーザーのうち、セルフレジを使うスーパーのお客様が該当するユーザー区分はどれか？",options:["間接ユーザー","二次ユーザー","一次ユーザー","広義のユーザー"],answer:2,explanation:"一次ユーザーは「一時的な目標達成のためにシステムと相互作用する人」を指します。セルフレジを使って会計を済ませる客は一次ユーザーです。メンテナンス業者は二次ユーザー、本社社員は間接ユーザー、店長は広義のユーザーに該当します。"},
+  {id:31,category:"リーンUX・アジャイル",text:"リーンUXの説明として誤っているものはどれか？",options:["リーン・スタートアップのコンセプトをUXデザインに取り入れたもの","アジャイルソフトウェア開発にUXデザインを取り込んでいる","スピードを追求せずエクスペリエンスのみに重きを置く","ウォーターフォールが向いているプロジェクトも存在する"],answer:2,explanation:"リーンUXはスピードも追求します。「スピードを追求しない」という説明は誤りです。ウォーターフォールの方が向いているプロジェクト（ミッションクリティカルなシステムや納期固定のプロジェクトなど）も確かに存在し、リーンUXが常に優れているとは言い切れません。"},
+  {id:32,category:"シグニファイア・アフォーダンス",text:"シグニファイアについての説明として最も適切なものはどれか？",options:["目の前にある要素でどのようなことができるかユーザーに伝えるもの","アフォーダンスの類似語であり同じ概念を指す","視覚的な要素においてのみ使用するもの","ターゲットを広く設定し幅広いユーザーに使いやすくUI設計するもの"],answer:0,explanation:"シグニファイアは「目の前の要素で何ができるか」をユーザーに伝えるものです。アフォーダンスは知覚の話、シグニファイアは認知の話で別概念です。また視覚だけでなく聴覚・嗅覚も対象となり、例えば「甘い匂い」は食べられることを伝えるシグニファイアとして機能します。"},
+  {id:33,category:"アフターデジタル",text:"OMO（Online Merges with Offline）の説明として誤っているものはどれか？",options:["オンラインとオフラインを一体のジャーニーとして捉える考え方","OMOとは目的ではなく顧客提供価値を増幅するための考え方","オンラインとオフライン双方を常に融通無碍に活用すべき考え方","オンラインだけの方が便利であればオンラインで済ますのが望ましい"],answer:2,explanation:"OMOは「オンラインとオフライン双方を必ず組み合わせるべき」という考え方ではありません。本質的にユーザーの状況に根ざし、ユーザーにベネフィットを提供することが前提です。便利であればオンラインのみで完結させることも正しい選択です。"},
+  {id:34,category:"サービスデザイン",text:"サービスブループリントの「フロントステージ」が表すものはどれか？",options:["組織内部のオペレーション","顧客が直接体験するサービスの接点","裏側のシステム構成","サービス提供者の研修内容"],answer:1,explanation:"フロントステージはユーザーの目に見えるサービスの接点を指します。例えば飲食店でいえば接客・提供された料理がフロントステージ、調理場での作業や発注業務がバックステージにあたります。サービスブループリントはこの両方を時間軸に沿って可視化します。"},
+  {id:35,category:"サービスデザイン",text:"サービスデザインの5つの基本原則として誤っているものはどれか？",options:["ユーザー中心","共創","インタラクションの連続性","人的証拠"],answer:3,explanation:"「人的証拠」ではなく「物的証拠」が正しい要素です。サービスデザインの5原則はユーザー中心・共創・インタラクションの連続性・物的証拠・ホリスティックな視点です。例えば飲食店では領収書やメニューカードが「物的証拠」として体験の一部を形成します。"},
+  {id:36,category:"UX5階層モデル",text:"ジェームズ・ギャレットが提唱するUXの5階層モデルの正しい構成要素はどれか？",options:["表面・骨格・要素・要件・戦略","表面・素案・構造・要件・戦術","表面・骨格・構造・要件・戦略","表面・骨格・要素・要件・戦術"],answer:2,explanation:"正しくは「表面・骨格・構造・要件・戦略」の5層です。下から「戦略（なぜ作るか）→要件（何を作るか）→構造（どう整理するか）→骨格（どこに配置するか）→表面（どう見せるか）」という階層構造で、UX設計の思考プロセスを整理したフレームワークです。"},
+  {id:37,category:"認知・心理",text:"ミラーの法則において、人間の作業記憶の容量として実験で示された数はいくつか？",options:["6","7","5","3"],answer:1,explanation:"ミラーの法則では「マジカルナンバー7±2」として、人間の短期記憶は約7つの情報チャンクに制限されると示されました。例えばナビゲーションメニューの項目数を7以内に抑えたり、電話番号をハイフンで区切ってチャンク化することでユーザーの認知負荷を下げるUI設計に活用されます。"},
+  {id:38,category:"UXリサーチ手法",text:"カードソーティングの主な目的として最も適切なものはどれか？",options:["ユーザーが求める情報構造を理解する","UIの色やフォントを評価する","サイト訪問者数を分析する","データベースのパフォーマンスを最適化する"],answer:0,explanation:"カードソーティングは調査参加者がカードに書かれたラベルを自分の基準で分類するUX調査手法です。例えばECサイトのカテゴリ設計の際、商品名を書いたカードをユーザーに分類してもらうことで、ユーザーが自然に理解しやすい情報構造やナビゲーション設計に活用できます。"},
+  {id:39,category:"UXリサーチ手法",text:"ユーザーが実際の利用環境で行動を観察されながら自然な形でインタビューを受ける手法はどれか？",options:["グループインタビュー","デプスインタビュー","コンテキストインタビュー","ダイアリー法"],answer:2,explanation:"コンテキストインタビューはユーザーが実際に製品を使っている環境で行われるインタビュー手法です。例えばコールセンター業務の改善なら、実際の業務中にスタッフを観察しながら話を聞くことで、実験室では得られない現場のリアルな課題を把握できます。"},
+  {id:40,category:"認知・心理",text:"「ピーク・エンドの法則」の説明として最も適切なものはどれか？",options:["ユーザーは全体の体験を通じた平均的な満足度を最も重視する","ユーザーは最初と最後の印象が最も重要と感じる","ユーザーは体験の中で最も強烈な瞬間と最後の印象によって全体の満足度を判断する","ユーザーはネガティブな体験の回数を感覚的に覚えている"],answer:2,explanation:"ダニエル・カーネマンが提唱したピーク・エンドの法則では、体験の「最も感情的な瞬間（ピーク）」と「終了時点（エンド）」が全体評価に大きく影響します。例えばテーマパークでは最高の乗り物体験と帰り際の土産店・お見送りがとりわけ記憶に残るよう設計されています。"},
+  {id:41,category:"UXリサーチ手法",text:"UXリサーチにおける「三角測量（Triangulation）」の説明として最も適切なものはどれか？",options:["3人以上のリサーチャーが同時に観察を行うこと","異なる方法・データ・視点を組み合わせ、解釈の妥当性を高めること","調査対象を3つのセグメントに絞り込むこと","インタビューを3回繰り返すことで信頼性を高めること"],answer:1,explanation:"三角測量は異なる手法（観察・インタビュー・ログなど）を組み合わせ、偏りのない洞察を得る手法です。例えばECサイト改善で「ユーザーインタビュー＋ヒートマップ＋購買ログ」を組み合わせることで、インタビューだけでは見えなかった実際の行動パターンとの差異を発見できます。"},
+  {id:42,category:"ダブルダイヤモンド",text:"ダブルダイヤモンドプロセスの正しい順序はどれか？",options:["探索→定義→展開→提供","調査→発見→定義→提供","探索→発見→定義→提供","調査→定義→展開→提供"],answer:0,explanation:"ダブルダイヤモンドは「探索（発散）→定義（収束）→展開（発散）→提供（収束）」の4フェーズです。1回目のダイヤモンドで「正しい問題を見つけ」、2回目で「正しい解決策を見つける」という二重の発散・収束プロセスにより、課題と解決策の両方を適切に定義できます。"},
+  {id:43,category:"情報アーキテクチャ",text:"情報アーキテクチャ（IA）が果たす役割として最も適切なものはどれか？",options:["コンテンツを構造的に整理し、使いやすいナビゲーションを設計する","画面の色使いを調整する","データベース構造を最適化する","システムのセキュリティを向上させる"],answer:0,explanation:"情報アーキテクチャは情報の構造・組織化・ラベル設計を通じて、ユーザーが目的の情報に到達しやすくする設計領域です。例えばECサイトの商品カテゴリ構造や検索・フィルタリング機能の設計はIAの代表例で、ユーザーが「探している商品を見つけやすい」体験を実現します。"},
+  {id:44,category:"認知・心理",text:"「ダークパターン」として最も適切な説明はどれか？",options:["視覚的な疲労を軽減するため黒を基調とした配色を使用するデザイン手法","ユーザーが意図せず行動を誘導されるように設計されたUIデザインの手法","夜間閲覧に最適なナイトモードのこと","まだ未完成のプロトタイプを提示すること"],answer:1,explanation:"ダークパターンはユーザーが望まない方向に誘導されるよう意図的に設計されたUI/UXのことです。例えばサブスクリプションの解約ボタンを極端に見つけにくくする、退会時に多くの確認画面を挟む、不要なオプションをデフォルトでオンにする、などが典型的な例です。"},
+  {id:45,category:"UXリサーチ手法",text:"KJ法の正しい手順として最も適切なものはどれか？",options:["データの単位化→カード化→グループ化→概念化→再グループ化→図解化→文章化","データのグループ化→カード化→単位化→概念化→再グループ化→図解化→文章化","データの単位化→カード化→グループ化→概念化→再単位化→図解化→文章化","データのグループ化→カード化→単位化→概念化→再単位化→図解化→文章化"],answer:0,explanation:"KJ法は川喜田二郎氏が考案したデータ整理手法で「単位化→カード化→グループ化→概念化→再グループ化→図解化→文章化」の順で行います。ユーザー調査で得た大量の定性データを構造化する際によく使われ、「頭で考えるより手を動かす」ことで新しい発見が生まれる特徴があります。"},
+  {id:46,category:"HCD",text:"「累積的UX」の説明として最も適切なものはどれか？",options:["製品やサービスを利用するイメージを想像する状態","製品やサービスに触れている最中の体験","製品やサービスを使用した経験を振り返る体験","製品やサービスの利用期間全体を振り返る体験"],answer:3,explanation:"累積的UXは製品・サービスの利用期間全体を通じた体験の蓄積です。「予期的UX（使う前の期待）」「一時的UX（使用中の体験）」「エピソード的UX（使用後の振り返り）」を含む包括的な概念で、例えばiPhoneに対する長年の愛着やブランドイメージも累積的UXの一部です。"},
+  {id:47,category:"ユニバーサルデザイン",text:"ユニバーサルデザインに当てはまらない具体例として正しいものはどれか？",options:["自動ドア","トイレに設置された手すり","センサー式蛇口","ピクトグラム"],answer:1,explanation:"トイレの手すりは「バリアフリー」の例です。バリアフリーは既存の設計に対して後付けで障壁を除去するもので、ユニバーサルデザインとは異なります。ユニバーサルデザインは最初から多様なユーザーを考慮して設計するアプローチで、自動ドア・センサー式蛇口・ピクトグラムが該当します。"},
+  {id:48,category:"アジャイル開発",text:"スクラムの説明として正しい組み合わせはどれか？",options:["プロダクトバックログで作業を管理し、スプリント末にレトロスペクティブを行う","スプリントバックログで作業を管理し、スプリント末にスプリントレビューを行う","タスクリストで作業を管理し、デイリースクラムを末尾に行う","スプリントプランニングで作業を管理し、スプリント末にスプリントレビューを行う"],answer:0,explanation:"スクラムではプロダクトバックログ（開発すべき機能・修正項目の優先順位付きリスト）を軸に作業を決定します。各スプリントの最後にレトロスペクティブ（振り返り）を行い、プロセスやチームワークの改善点を議論します。スプリントレビューは成果物をステークホルダーと確認する場で、レトロスペクティブとは別のイベントです。"},
+  {id:49,category:"アジャイル開発",text:"アジャイル開発プロセスの「レトロスペクティブ」の説明として最も適切なものはどれか？",options:["毎回の反復プロセスの最後に行われる振り返り活動","開発物の要素に関して検討を行う会議","個人の能力向上のみを目的とした自己振り返り","スプリントの開始時に行うプランニング"],answer:0,explanation:"レトロスペクティブは反復プロセス（スプリント）の最後に行われる振り返り活動です。「うまくいったことは何か」「問題点は何か」「次のスプリントで改善できることは何か」をチームで話し合い、個人やチームの能力・関係性・プロセスなど幅広い観点で改善を図ります。"},
+  {id:50,category:"UXリサーチ手法",text:"「インスペクション法」の特徴として最も適切なものはどれか？",options:["実際のユーザーを用いてタスク遂行を観察する手法","専門家がユーザーインターフェースを検査してユーザビリティ問題を検出する手法","アンケートで多数ユーザーの意見を収集する手法","AIによって自動的にUIの問題を検出する手法"],answer:1,explanation:"インスペクション法は専門家がUIを検査してユーザビリティ問題を発見する評価手法の総称です。実験設備や被験者が不要なため効率的に評価でき、仕様書やスケッチ段階から評価できる利点があります。ヒューリスティック評価や認知的ウォークスルーがインスペクション法に含まれます。"},
+  {id:51,category:"HCD",text:"「累積的UX」の形成において、製品を操作する際の（　）がつながって「エピソード的UX」が形成される。（　）に入る言葉はどれか？",options:["瞬間的UX","瞬時的UX","一時的UX","操作性UX"],answer:2,explanation:"UX白書では「一時的UX（製品に触れている最中の体験）」がつながることでエピソード的UXが形成され、さらにエピソードが積み重なり「累積的UX」になると定義しています。この時間軸に沿った4層（予期的→一時的→エピソード的→累積的）の理解がUX設計の基礎となります。"},
+  {id:52,category:"サービスデザイン",text:"「コ・デザイン」の説明として最も適切なものはどれか？",options:["HCDを基本にした創造的なデザインアプローチのこと","デザイナーや専門家だけでなく実際の利用者や利害関係者とプロジェクト内で積極的に関わりながらデザインすること","誰も取り残さないデザイン手法","コンピューターを使ったデザイン手法"],answer:1,explanation:"コ・デザイン（Co-design）はデザイナーだけでなく実際のユーザーやステークホルダーが設計プロセスに参加する手法です。例えば公共施設のリノベーション設計で、地域住民・施設利用者・行政担当者が共にワークショップを行い、多様な視点から価値あるサービスを創出します。"},
+
+  // ── ウェブアクセシビリティ（ID 53-61）──
+  {id:53,category:"ウェブアクセシビリティ",text:"WCAGの4つの主要原則として正しいものはどれか？",options:["知覚可能・操作可能・理解可能・堅牢","知覚可能・操作可能・実現可能・堅牢","認知可能・操作可能・理解可能・安全","知覚可能・使用可能・理解可能・堅牢"],answer:0,explanation:"WCAGの4原則は「知覚可能（Perceivable）・操作可能（Operable）・理解可能（Understandable）・堅牢（Robust）」です。例えば「知覚可能」は画像に代替テキストを付ける、「操作可能」はキーボードだけで全操作できる、「理解可能」はエラーメッセージを分かりやすく伝える、「堅牢」は様々な支援技術で正しく解釈される、といった要件に対応します。"},
+  {id:54,category:"ウェブアクセシビリティ",text:"Webアクセシビリティにおける「代替テキスト（alt属性）」の最も重要な目的はどれか？",options:["画像の装飾効果を高める","画像を検索エンジンに表示させる","視覚障害者などに画像の内容を伝える","画像のファイルサイズを削減する"],answer:2,explanation:"alt属性は視覚に障害のあるユーザーがスクリーンリーダーで画像の内容を理解できるようにするためのものです。例えば「グラフ画像」には「2024年売上推移：前年比120%」と内容を説明するaltを設定します。装飾目的のみの画像には空のalt（alt=\"\"）を設定し、スクリーンリーダーが読み飛ばせるようにします。"},
+  {id:55,category:"ウェブアクセシビリティ",text:"アクセシビリティにおける「キーボード操作のみでの操作可能性」が重要な理由として最も適切なものはどれか？",options:["視覚障害者だけでなく手の不自由なユーザーも利用可能にする","デザインの統一性を高める","サイトの読み込み速度を改善する","SEO対策に有利になる"],answer:0,explanation:"キーボードのみで操作できることは、マウス操作が困難な運動障害のあるユーザー、視覚障害者（スクリーンリーダーはキーボードで操作）、一時的な怪我でマウスが使えないユーザーなど、幅広い人が恩恵を受けます。例えばフォームのタブキー移動、モーダルのEscキー閉鎖、ドロップダウンの矢印キー操作などが該当します。"},
+  {id:56,category:"ウェブアクセシビリティ",text:"アクセシビリティの定義に関して当てはまらないものはどれか？",options:["アクセシビリティの定義の中にユーザビリティの考え方が含まれている","行政サービスのデザインにも当てはまる","多様な利用者のニーズを効果的かつ効率的に達成できるよう利用者中心を原則としている","ユニバーサルデザインとアクセシビリティは全く同じ定義を持っている"],answer:3,explanation:"ユニバーサルデザインとアクセシビリティは似た概念ですが異なります。アクセシビリティは「様々な能力を持つ最も幅広い層の人々に対するユーザビリティ」を指します。ユニバーサルデザインは「最初から多様なユーザーを考慮した設計」であり、後付けの障壁除去（バリアフリー）とも異なります。目的は似ていますが定義・アプローチが異なります。"},
+  {id:57,category:"ウェブアクセシビリティ",text:"ウェブアクセシビリティの4原則として誤っているものはどれか？",options:["知覚可能","操作可能","実現可能","堅牢"],answer:2,explanation:"正しい4原則は「知覚可能・操作可能・理解可能・堅牢」です。「実現可能」は原則に含まれておらず、正しくは「理解可能（Understandable）」です。例えば理解可能の原則では、エラーメッセージを平易な言葉で書く・複雑な言葉には説明を添える・入力フォームのラベルを明確にするなどが求められます。"},
+  {id:58,category:"ウェブアクセシビリティ",text:"ISO9241 Part-10「対話の法則」は7つの要素から成るが、誤っている要素はどれか？",options:["作業に対する適合","手動説明","制御可能性","ユーザの期待への適合"],answer:1,explanation:"「手動説明」ではなく「自己説明（自動説明）」が正しい要素です。ISO9241 Part-10の7要素は「作業に対する適合・自己説明・制御可能性・ユーザの期待への適合・エラー許容度・個別化に対する適合・学習に対する適合」です。例えば「自己説明」は、操作方法をユーザーが画面を見るだけで理解できるような設計を指します。"},
+  {id:59,category:"ウェブアクセシビリティ",text:"「UX解析ツール」を一言で定義すると最も適切なものはどれか？",options:["ユーザーの行動が見えるツール","ユーザーの感情が見えるツール","ユーザーの購買意欲が見えるツール","ユーザーの嗜好性が見えるツール"],answer:0,explanation:"UX解析ツールは「ユーザーの行動が見えるツール」です。ヒートマップでどこがクリックされているか、スクロール深度、ページ離脱タイミング、セッション録画などでユーザーの詳細な行動を可視化します。アクセス解析ツール（GA等）がページ遷移を把握するのに対し、UX解析ツールはページ内の細かい行動まで追えることが特徴です。"},
+  {id:60,category:"ウェブアクセシビリティ",text:"認知的ウォークスルーは主に何を評価するための手法か？",options:["学習容易性（Learnability）","視認性（Visibility）","効率性（Efficiency）","エラー回避能力（Error Prevention）"],answer:0,explanation:"認知的ウォークスルーは「初めてシステムを使うユーザーがどれだけスムーズに操作できるか（学習容易性）」を評価する手法です。専門家がユーザーの視点に立ってシナリオに沿って操作をシミュレーションし、初心者が各ステップで「何をすべきか分かるか」「操作した結果が期待通りか」を検証します。"},
+  {id:61,category:"ウェブアクセシビリティ",text:"「インフォーマル評価」の特徴として最も適切なものはどれか？",options:["厳密な実験計画に基づいて評価を行う","ユーザーや関係者のフィードバックを素早く得ることを目的とする","統計的な有意差を分析することが主目的である","テスト参加者の選定には厳格な基準が必要である"],answer:1,explanation:"インフォーマル評価はプロトタイプ等を使いながら迅速にフィードバックを得ることを目的とする手法で、厳密な実験計画や統計的分析を必ずしも必要としません。例えば紙のプロトタイプを同僚5人に見せて問題点を拾い上げる「ゲリラテスト」はインフォーマル評価の典型例です。スピーディな改善サイクルに向いています。"},
+
+  // ── 認知バイアス（ID 62-70）──
+  {id:62,category:"認知バイアス",text:"代表的な認知バイアスとして誤っているものはどれか？",options:["アンカリング・ヒューリスティクス","代表性ヒューリスティック","現状維持バイアス","個人的保守主義"],answer:3,explanation:"「個人的保守主義」は認知バイアスの用語として存在しません。正しくは「集団的保守主義」です。集団的保守主義とは、状況が変わって新しいやり方を取り入れる必要が生じても、集団によって確立されたパターンに固執する傾向を指します。例えばチームが非効率なプロセスを「ずっとこうやってきたから」と変えない場合が該当します。"},
+  {id:63,category:"認知バイアス",text:"「アンカリング効果」をUX設計に活用した例として最も適切なものはどれか？",options:["ユーザーの選択肢を最小限に絞ることで迷いをなくす","最初に高価なプランを提示してから標準プランを見せることで割安感を演出する","ユーザーが期待する情報を優先的に表示する","ネガティブなフィードバックも積極的に提供する"],answer:1,explanation:"アンカリング効果とは、最初に見た情報（アンカー）が後続の判断に影響を与える認知バイアスです。例えばSaaSの料金ページで「エンタープライズ：月額5万円」を最初に見せた後、「スタンダード：月額1万円」を提示すると割安に感じやすくなります。ECサイトの「定価 ¥10,000 → 特価 ¥6,000」の表示も同じ原理です。"},
+  {id:64,category:"認知バイアス",text:"「確証バイアス」の説明として最も適切なものはどれか？",options:["最初に提示された情報に判断が引きずられる傾向","自分の既存の信念を支持する情報を優先的に取り入れ、反証となる情報を無視しやすい傾向","損失を得ることより避けることを優先する傾向","多数派の行動に合わせようとする傾向"],answer:1,explanation:"確証バイアスは既存の信念・仮説を支持する情報を優先的に収集・解釈し、反証となる情報を見落としやすい傾向です。UXリサーチでは、デザイナーが「このデザインは良いはず」と思い込んだままテストすると、都合の良いユーザー発言だけを証拠として拾ってしまう危険があります。複数の評価者を置くことで防止できます。"},
+  {id:65,category:"認知バイアス",text:"「損失回避バイアス」をUX設計で考慮する際の正しいアプローチはどれか？",options:["ユーザーに常にネガティブなフィードバックを与えて本当の情報に誘導する","損失回避バイアスはUX設計では活用できない","ポジティブなフィードバックを中心に設計しつつ、必要なネガティブ情報はやわらかく伝える","損失の恐れを強調し積極的に不安を煽ることでユーザーを行動させる"],answer:2,explanation:"損失回避バイアスは「得る喜び」より「失う痛み」を大きく感じる心理的特性です。UX設計では不必要な不安・ストレスを与えず、ポジティブな文脈で情報を伝えることが基本です。例えばフォームのエラーメッセージを「入力が間違っています」より「メールアドレスをご確認ください」と伝えることで、ユーザーの離脱を防ぎながら課題解決を促せます。"},
+  {id:66,category:"認知バイアス",text:"「ナッジ」の説明として最も適切なものはどれか？",options:["禁止・命令・経済的インセンティブを与えることなく選択の提示方法で人の行動を変える手法","金銭的な報酬を与えることでユーザーに望ましい行動を促す手法","強制的にユーザーを特定の行動に誘導するUI設計","アクセシビリティ向上のための画面設計の原則"],answer:0,explanation:"ナッジは「選択肢の提示方法を変えることで、禁止や命令・金銭的インセンティブなしに人の行動を変える」手法です。例えばオランダの男性トイレ小便器にハエの絵を描くと清掃費が8割減少した事例が有名です。UXでは「90%のユーザーがこの設定を利用しています」という社会的証明表示や、デフォルト設定の工夫がナッジにあたります。"},
+  {id:67,category:"認知バイアス",text:"ナッジの具体例として誤っているものはどれか？",options:["男性トイレの小便器にハエの絵を描き、床を汚す利用者を減らす","スーパーのレジ前に足跡マークを貼って自然と並ばせる","小売店でおすすめ商品にステッカーを貼り選択しやすくさせる","会員登録するとクーポンが貰えるキャンペーンを実施しアプリ登録を促す"],answer:3,explanation:"クーポン配布は「金銭的インセンティブ」であるためナッジではありません。ナッジの定義は「禁止・命令・経済的インセンティブを与えずに行動を変える」ことです。ハエの絵（的を提供して自然に狙わせる）、足跡マーク（並ぶ位置を示す）、おすすめステッカー（選択を促す）はいずれも金銭的インセンティブなしに行動を変えるナッジです。"},
+  {id:68,category:"認知バイアス",text:"「社会的証明」を活用したナッジ手法として最も適切なものはどれか？",options:["未入力の欄を赤色でハイライトしエラーメッセージを表示する","入力欄の横に「他の90%のユーザーがこの欄を正しく埋めています」と記載する","入力完了時に全体の進捗率をパーセンテージで表示する","フォームの最後に「全ての情報が正確か確認してください」とポップアップを出す"],answer:1,explanation:"「他の90%のユーザーが〜」という表現は社会的証明の法則を利用したナッジです。人は多数派の行動に合わせようとする傾向があるため、他者の行動を示すことで自然と同じ行動を促せます。例えばホテル予約サイトの「残り3室」「今5人が閲覧中」もこの原理です。エラーハイライトは通知・フィードバックであり、進捗率は達成感を与えるゲーミフィケーションです。"},
+  {id:69,category:"認知バイアス",text:"ダニエル・カーネマンが提唱した「システム1・システム2」の思考理論について、システム1の説明として正しいものはどれか？",options:["論理的・統計的な思考を担う意識的なモード","直感的・自動的に高速で働き、考えるのにほぼ努力が不要なモード","注意力を必要とし、気が散っていると機能しにくいモード","意識でコントロールしている感覚が強いモード"],answer:1,explanation:"システム1は直感的・自動的に高速で働く思考モードで、意識的なコントロール感はほとんどありません。例えば「2+2」の計算や、道路で車を見たとき瞬時に危険を感じることがシステム1です。UX設計では、ユーザーがシステム1で直感的に操作できる（考えなくても使える）インターフェースを目指すことが重要です。システム2はこれと対照的な論理的・意識的な思考です。"},
+  {id:70,category:"認知バイアス",text:"「選択肢過多バイアス（ジャムの法則）」をUX設計で防ぐための対策として最も適切なものはどれか？",options:["ユーザーに可能な限り多くの選択肢を提示して自由度を高める","選択肢を必要最小限に絞り、意思決定の負荷を下げる","選択肢の数よりも見た目の美しさを優先する","全ての選択肢に同じ優先度でアクセスできるようにする"],answer:1,explanation:"選択肢過多バイアスは選択肢が多すぎると逆に選べなくなり、満足度も下がる現象です（スーパーのジャム実験で証明）。UX設計では、ナビゲーション項目は7つ以内にする、段階的に絞り込める設計にする、おすすめ選択肢を設けるなどの対策が有効です。例えばNetflixが「あなたへのおすすめ」を前面に出し、全作品一覧を非推奨にしているのもこの原理からです。"},
+
+  // ── モバイルUX・音声UX（ID 71-77）──
+  {id:71,category:"モバイルUX",text:"モバイルUXを最適化するための設計原則として最も適切なものはどれか？",options:["デスクトップ版と同じUIをそのまま使用し一貫性を保つ","画面が小さいため全情報を1ページに詰め込みスクロールを不要にする","タップしやすいボタンサイズや適切な行間を確保し指での操作を考慮したデザインにする","モバイルではUXよりデザインの美しさを優先し画像やアニメーションを多用する"],answer:2,explanation:"モバイルUXではスマートフォンの特性（画面サイズ・タッチ操作・視認性）を考慮した設計が必要です。ボタンはAppleのHIG推奨通り44×44pt以上にし、テキストの行間・フォントサイズを適切に調整します。デスクトップのUIをそのまま縮小すると操作性が著しく低下するため、モバイル専用のレイアウトとナビゲーションを設計することが重要です。"},
+  {id:72,category:"モバイルUX",text:"モバイルサイトのパフォーマンス最適化において最も重要な要素はどれか？",options:["高品質な画像を多用し視覚的に魅力的なデザインを優先する","サーバーのレスポンス速度を向上させ画像やスクリプトを最適化してページ読み込み速度を高速化する","全JavaScriptを同期的に読み込むことで動作の安定性を確保する","全情報を1ページにまとめスクロールを最小限にする"],answer:1,explanation:"モバイルUXではページ読み込み速度が体験品質を左右します。GoogleのCore Web Vitals（LCP・FID・CLS）は表示速度・操作応答性・視覚安定性を評価します。画像圧縮、不要スクリプト削減、CDN活用、遅延読み込みなどが主な最適化手法です。読み込みが3秒を超えるとモバイルユーザーの53%が離脱するというデータもあります。"},
+  {id:73,category:"モバイルUX",text:"「F字型視線パターン」が主に観察されるのはどのような場面か？",options:["ソーシャルメディア投稿の閲覧","デスクトップ画面でのテキストコンテンツを読むとき","動画広告を視聴するとき","ECサイトで商品画像を閲覧するとき"],answer:1,explanation:"F字型パターンは、ユーザーがWebページのテキストをスキャンする際に視線が「F」の形に動く現象で、特にデスクトップのテキスト記事・ニュースサイトで顕著です。最初の数行は横方向に読み、その後は左端を縦スキャンする傾向があります。重要な情報は上部と左端に配置する設計原則に活用されます。"},
+  {id:74,category:"モバイルUX",text:"「グラスモーフィズム」の特徴として最も適切なものはどれか？",options:["透明感やぼかし効果を用いたデザイン","シンプルでフラットな形状と単色背景を採用したデザイン","立体感と影を強調したリアル志向のデザイン","テキストベースのシンプルなミニマルデザイン"],answer:0,explanation:"グラスモーフィズム（Glassmorphism）は透明度・ぼかしを組み合わせ、要素をすりガラスのように見せる表現手法です。iOS・macOSのUI、Windows 11のAcrylic素材などに採用されています。背景が透けて見えることで奥行き感を演出できますが、コントラスト不足によるアクセシビリティ問題に注意が必要です。"},
+  {id:75,category:"音声UX（VUI）",text:"音声UX（VUI）設計において誤っているものはどれか？",options:["ユーザーが話しやすい自然な言葉で対話できるよう短いフレーズでの入力も考慮した設計を行う","音声インターフェースは画面が不要なので視覚的なフィードバックは省略しても問題ない","エラー時には具体的な修正案を提示しユーザーが適切な操作をしやすくする","音声認識の精度には限界があるため特定のコマンドを強調し誤認識を減らす工夫をする"],answer:1,explanation:"音声UXでも視覚的フィードバックは重要です。ユーザーが音声入力した内容を画面に表示したり、認識中を示すアニメーションを加えることでユーザーの不安を軽減できます。音声のみに頼ると、認識ミス・騒音環境・聴覚障害のあるユーザーへの対応が不十分になります。音声＋視覚のマルチモーダル設計がVUIのベストプラクティスです。"},
+  {id:76,category:"音声UX（VUI）",text:"UI/UXの歴史において、GUIの基本概念が初めて広く導入されたシステムはどれか？",options:["IBM 701","ゼロックス アルト","アップル リサ","マイクロソフト ウィンドウズ"],answer:1,explanation:"ゼロックス アルト（1973年）はGUI（ウィンドウ・アイコン・マウス操作）の基本概念を初めて導入したシステムです。商業化はされませんでしたが、その後Appleがこれらの概念を取り入れてApple Lisa（1983年）、Macintosh（1984年）を開発しました。現代のGUIの源流は1970年代のゼロックスPARCの研究にあります。"},
+  {id:77,category:"モバイルUX",text:"「ユーザーオンボーディング」の設計として誤っているものはどれか？",options:["ステップバイステップのガイドで重要な機能を順を追って教える","初回起動時に全機能を説明することでユーザーに包括的な理解を促す","実際の操作を通じて学べるインタラクティブなチュートリアルを提供する","初期設定を簡略化し必要最低限の入力のみをユーザーに求める"],answer:1,explanation:"初回起動時に全機能を一度に説明すると情報過多（Information Overload）でユーザーが混乱し離脱します。効果的なオンボーディングは情報を段階的に提供し、ユーザーが自然な流れで学べる設計です。例えばSlackは最初にチャンネルへの投稿だけを案内し、他の機能は実際に使い始めてから徐々に紹介するアプローチを採用しています。"},
+
+  // ── ゲーミフィケーション・エモーショナルデザイン（ID 78-84）──
+  {id:78,category:"ゲーミフィケーション",text:"ゲーミフィケーションを活用したUX設計として誤っているものはどれか？",options:["ユーザーのモチベーションを高めるためポイント・バッジ・ランキングなどのゲーム要素を導入することが効果的","ゲーミフィケーションはゲーム要素を取り入れるだけでなくユーザーの内発的動機（楽しさや達成感）を高めることも重要","ゲーミフィケーションはあらゆる状況で有効でどのようなサービスにもゲーム要素を取り入れるとUXが向上する","ユーザーの行動を促進するために報酬の仕組み（リワード・レベルアップ）を設計し継続的なエンゲージメントを高める"],answer:2,explanation:"ゲーミフィケーションはすべてのサービスに有効なわけではありません。ターゲットユーザーの動機や文脈を考慮しない設計は逆効果になります。例えば金融サービスや医療アプリで安易にゲーム要素を導入すると信頼性が損なわれる可能性があります。ゲーミフィケーションは内発的動機と整合したとき最大の効果を発揮します。"},
+  {id:79,category:"ゲーミフィケーション",text:"エモーショナルデザインを活用したUX設計として誤っているものはどれか？",options:["エモーショナルデザインは視覚的な美しさだけでなくユーザーの感情や体験を考慮して設計することが重要","プロダクトの使いやすさ（ユーザビリティ）よりも感情を動かすデザインが優先されるべきである","人はプロダクトに対して「認知レベル」「行動レベル」「感情レベル」の3つのレベルで反応しUX設計ではこれらすべてを考慮する必要がある","ユーザーがポジティブな感情を抱くとプロダクトへの満足度やロイヤルティが向上する可能性がある"],answer:1,explanation:"エモーショナルデザインでは感情を刺激することが重要ですが、ユーザビリティ（使いやすさ）を犠牲にしてはいけません。「美しいけれど使いにくい」デザインではユーザーの満足度は長続きしません。ドン・ノーマンは認知・行動・感情の3レベルすべてが揃うことで真のエモーショナルデザインが実現すると述べています。"},
+  {id:80,category:"ゲーミフィケーション",text:"「マイクロコピー」の説明として最も適切なものはどれか？",options:["小規模な企業が使用する広告コピーのこと","ウェブサイトやアプリ内でユーザーに対して簡潔でわかりやすいメッセージを提供するテキストのこと","プログラムコードの中で繰り返し利用される短いコードの断片","ユーザーの行動をトラッキングするためのクッキーとして使用される小さなテキストデータ"],answer:1,explanation:"マイクロコピーはUI上の小さなテキスト（エラーメッセージ・ボタンラベル・フォームのプレースホルダー・ツールチップなど）です。例えばボタンのテキストを「送信」ではなく「無料で始める」にする、エラーを「無効な入力」ではなく「メールアドレスの形式をご確認ください」にすることで、ユーザー行動と満足度が大きく変わります。"},
+  {id:81,category:"ゲーミフィケーション",text:"「マイクロインタラクション」の良い例として最も適切なものはどれか？",options:["ページ読み込み中の無反応なスピナーアイコン","ボタンをクリックしたときの視覚的なアニメーション","サイトの背景で再生される自動音楽","ユーザーがフォームを送信する前にエラーメッセージを表示しない"],answer:1,explanation:"マイクロインタラクションはユーザーの操作に対する細かなフィードバックで、体験を豊かにします。ボタンクリック時のアニメーションは「操作が受け付けられた」という安心感を与えます。例えばLikeボタンを押したときのハートアニメーション、フォーム送信後のチェックマーク表示、プルトゥリフレッシュ時の引っ張り感などが代表例です。"},
+  {id:82,category:"ゲーミフィケーション",text:"「ダークパターン」の一種である「隠された料金」の例として最も適切なものはどれか？",options:["無料トライアル期間後に自動的に有料プランへ移行させる","購入確認画面に追加料金の説明なくオプションが含まれている","購入ボタンを目立つ色・キャンセルボタンを目立たない色にする","アカウント作成時に友人の連絡先の共有を強制する"],answer:1,explanation:"「隠された料金（Hidden Costs）」は購入プロセスの最終段階まで追加費用を明示しないダークパターンです。例えば送料・手数料・オプション料金が最後の確認画面で突然現れるケースが該当します。「強制的な継続性」は自動更新の課金、「視覚的優先順位」はボタンの色差による誘導、「強制的な共有」は連絡先の強制取得です。"},
+  {id:83,category:"ゲーミフィケーション",text:"「フィッツの法則」が示唆するUI設計原則として誤っているものはどれか？",options:["ボタンは頻繁に使われるほど大きく設計するべきである","ユーザーがボタンをクリックするまでの時間はボタンのサイズと距離に影響を受ける","画面内のボタンはすべて同じサイズにしデザイン面の統一感を出すべきである","重要な操作ボタンはユーザーが簡単にアクセスできる距離に配置するべきである"],answer:2,explanation:"フィッツの法則では「ターゲットの選択時間はターゲットまでの距離に比例し、大きさに反比例する」とされています。全ボタンを同じサイズにすることはこの法則に反します。例えば「購入する」「保存する」などの主要アクションは大きく・近く配置し、「削除する」などの危険な操作は小さく・遠くに配置することでUXを向上できます。"},
+  {id:84,category:"ゲーミフィケーション",text:"「視覚的階層」をUIデザインで活用する目的として最も適切なものはどれか？",options:["ページ全体をカラフルにする","ユーザーに重要な情報を強調して伝える","ページの読み込み速度を向上させる","すべての情報を均一に配置する"],answer:1,explanation:"視覚的階層は色・サイズ・位置・フォントウェイトなどを使って情報の優先度を視覚的に示す手法です。例えばランディングページでは「見出し（大）→ サブコピー（中）→ 本文（小）→ CTAボタン（目立つ色）」という階層を設けることで、ユーザーが重要な情報に素早くアクセスし行動につながりやすくなります。"},
+
+  // ── UX指標・計測（ID 85-91）──
+  {id:85,category:"UX指標・計測",text:"NPSの弱点として最も適切なものはどれか？",options:["新規ユーザーの利用導線を可視化できない","LTVの変動と連動せずビジネス指標との関連性が低い","回答が5段階尺度のため粒度が粗くなる","推奨意向と実際の行動には乖離が生じることがあり行動データとの併用が必要"],answer:3,explanation:"NPS（Net Promoter Score）は「推奨意向」という態度を測る指標であり、実際の推薦行動とは一致しないことがあります。例えば高いNPSを示したユーザーが実際には友人を紹介していないケースも多く、行動データ（紹介数・継続率・購買頻度）と組み合わせて解釈することが重要です。"},
+  {id:86,category:"UX指標・計測",text:"A/Bテストを実施する際に最も適切な方法はどれか？",options:["1つのテストごとに変更点を1つだけに絞り他の変数の影響を排除する","一度に複数の要素（色・配置・テキスト）を変更しながら短期間で結論を出す","変更後のデザインが直感的に良さそうであればA/Bテストの結果に関係なく採用する","テストは短期間で実施し十分なサンプル数がなくても傾向が見えたら結論を出す"],answer:0,explanation:"A/Bテストでは1テストにつき1変数に絞ることで、どの要因がユーザー行動に影響したかを正確に特定できます。複数要素を同時変更すると因果関係が不明になります。また統計的に有意なサンプルサイズを確保し、十分なテスト期間（最低1〜2週間）を設けることも重要です。"},
+  {id:87,category:"UX指標・計測",text:"バイラル係数（Viral Coefficient）の正しい説明はどれか？",options:["1人のユーザーが招待する平均人数に招待されたユーザーのコンバージョン率を掛けた値で1以上を目指す","SNS上の投稿に対するいいねとコメントの総数を合計した値","企業の広告予算をユーザー数で割った値","アクティブユーザーの増加率"],answer:0,explanation:"バイラル係数＝「1ユーザーが招待する平均人数 × 招待の成功率」で計算されます。この値が1以上になると、1人のユーザーが1人以上の新規ユーザーを生み出し、広告費なしでユーザーが指数関数的に増加する状態になります。TikTokやZoomはバイラル係数を1以上にすることで急速な成長を実現した事例です。"},
+  {id:88,category:"UX指標・計測",text:"ISO 9241-11が定義する「有効性（Effectiveness）」の評価指標として最も適切なものはどれか？",options:["ユーザーがタスクを完了するまでの時間","ユーザーがタスクを達成できる割合","ユーザーの主観的な満足度","ユーザーがシステムを初めて使用した際の誤操作の回数"],answer:1,explanation:"ISO 9241-11はユーザビリティを「有効性（Effectiveness）・効率性（Efficiency）・満足度（Satisfaction）」の3要素で定義します。有効性はユーザーがタスクを正確・完全に達成できる度合い（タスク成功率）を指します。効率性はタスク完了にかかる時間・労力、満足度は主観的な使いやすさの評価です。"},
+  {id:89,category:"UX指標・計測",text:"「システムユーザビリティスケール（SUS）」の説明として最も適切なものはどれか？",options:["ユーザーの行動データ（クリック数や時間など）を測定しシステムのユーザビリティを評価するツール","特定の業界や用途に合わせてカスタマイズされたユーザビリティ評価ツール","システムのパフォーマンス指標（応答時間やエラー率）を数値化し客観的に評価する指標","10項目の質問を用いてユーザーの主観的なシステムの使いやすさを評価するアンケート手法"],answer:3,explanation:"SUS（System Usability Scale）はJohn Brooke（1986年）が開発した10項目のアンケートで、システムの主観的ユーザビリティを0〜100点で評価します。奇数番号が肯定形・偶数番号が否定形の質問で構成され、特定システムに依存せず汎用的に使えます。68点以上が平均的なユーザビリティの目安とされています。"},
+  {id:90,category:"UX指標・計測",text:"UXグロースモデルにおける適切なUX指標の設計方法として最も適切なものはどれか？",options:["プロダクトと親和性の高い指標はなるべく多く設定し均等に重視することで網羅的な分析を行う","ユーザーの行動や心理を反映した指標を設定しビジネス目標と紐づけてUX改善を行う","業界標準の指標（NPSやCVRなど）を採用し自社独自のUX指標は作らなくても良い","UX改善に指標は不要でなるべくデザインの専門家の直感的な判断に任せるべきである"],answer:1,explanation:"UX指標を適切に設定するには、業界標準の指標（NPS・CVR）だけでなく自社プロダクトやビジネスモデルに合った指標を設計することが重要です。例えばユーザーのエンゲージメント・継続利用率など、行動データと心理データを組み合わせた指標を設定することで、より的確なUX改善が可能になります。"},
+  {id:91,category:"UX指標・計測",text:"「フリクション（Friction）」についての正しい説明はどれか？",options:["フリクションは完全に排除されるべきでユーザー体験において価値を持たない","ユーザーの学習段階が上がるほどフリクションは自然に消失する","サービスの利用継続を促すために意図的に増やす必要がある","UXの阻害要因であり、ユーザーの目的達成を妨げる心理的・操作的な負荷を指す"],answer:3,explanation:"フリクションはユーザーの行動を妨げる心理的・操作的な負荷の総称です。不要なフリクションは除去すべきですが、セキュリティ確認（パスワード再入力）や重要な操作の確認ダイアログなど、意図的なフリクションがユーザーを守ることもあります。重要なのはフリクションの「完全排除」ではなく「適切な設計」です。"},
+
+  // ── 狩野モデル・品質理論（ID 92-96）──
+  {id:92,category:"狩野モデル・品質理論",text:"狩野モデルが提唱する品質の5つのうち誤っているものはどれか？",options:["当たり前品質","一元的品質","魅力的品質","関心品質"],answer:3,explanation:"「関心品質」は狩野モデルに存在しません。正しくは「無関心品質」です。5つの品質は「当たり前品質（なければ不満）・一元的品質（あれば満足、なければ不満）・魅力的品質（あれば満足、なくても不満ではない）・無関心品質（あってもなくてもどちらでもよい）・逆品質（あると逆に満足度が下がる）」です。"},
+  {id:93,category:"狩野モデル・品質理論",text:"狩野モデルの「魅力的品質」の説明として最も適切なものはどれか？",options:["あって当たり前だが、なければ不満に感じるもの","当たり前ではないが、あると嬉しくて、なければ不満に感じるもの","不十分でもユーザーが不満を感じないが、高めることでユーザーの満足につながるもの","満たされても満たされなくても、嬉しいわけでもなく不満なわけでもないもの"],answer:2,explanation:"魅力的品質は「なくても不満ではないが、あれば嬉しい」要素です。例えばスマートフォンの顔認証（指紋認証で十分だが、あると嬉しい）、配送の当日便（翌日でも不満ではないが、あれば満足度が高まる）などが魅力的品質です。競合差別化のカギになる要素で、時間が経つと当たり前品質に変化していきます。"},
+  {id:94,category:"狩野モデル・品質理論",text:"「シャッケルの定義」として提唱されていないものはどれか？",options:["ユーティリティ","ユーザビリティ","ライカビリティ","リライアビリティ"],answer:3,explanation:"リライアビリティ（信頼性・Reliability）はシャッケルの定義には含まれません。ISO 9126で述べられているソフトウェア品質の規格です。シャッケルの定義はユーティリティ（有用性）・ユーザビリティ（使いやすさ）・ライカビリティ（好ましさ）の3つで、1991年の著書「Human Factors for Information Usability」で提唱されました。"},
+  {id:95,category:"狩野モデル・品質理論",text:"「持続的なイノベーション」の説明として最も適切なものはどれか？",options:["最新技術を一歩一歩導入しユーザーが常に新鮮さを感じられるようにすること","ニーズや技術の進化に対応し価値を継続的に高めながら体験を改善すること","デザインの美しさを追求し他サービスと差別化するためにユニークなビジュアルを作成すること","開発コストを削減するために定型化されたテンプレートを使用して効率を重視すること"],answer:1,explanation:"持続的なイノベーションは「既存の延長線上で継続的に改善を重ねること」です。製品のコモディティ化が進む現代では、問題解決型のユーザビリティ向上だけではマイナスをゼロにするだけで、プラスに転じるためにはユーザーにとっての魅力的な価値をタイムリーに提供し続けることが必要です。"},
+  {id:96,category:"狩野モデル・品質理論",text:"「非連続的なイノベーション」の説明として最も適切なものはどれか？",options:["これまでの製品やサービスを継続的に改善し使いやすさを少しずつ向上させること","これまでの技術を最大限に活用し操作性を向上させることで満足度を向上させること","ユーザーが想像もしていなかった全く新しい体験を創り市場を大きく変革すること","ニッチなユーザー層に特化した特殊な機能を追加で提供すること"],answer:2,explanation:"非連続的なイノベーションは既存の延長線上にない「ゲームチェンジャー的な革新」です。iPhoneがフィジカルキーボードを廃したタッチスクリーンUI、UberがタクシーをオンデマンドにしたOMOモデルなどが例です。世の中の技術動向・社会変化を把握し、自社のコア・コンピタンスと組み合わせてビジネスモデルを描く能力が求められます。"},
+
+  // ── パーパス経営・デザイン経営（ID 97-103）──
+  {id:97,category:"パーパス経営・デザイン経営",text:"パーパス経営について誤っているものはどれか？",options:["様々な社会課題の解決に向け企業ができることをパーパスとして表明し多くの人の共感を呼び込むことで企業価値向上につながる","ミレニアル・Z世代の社会問題への関心に沿うパーパスを打ち出すことで持続的に賛同者を獲得できる","パーパスを経営理念として掲げそれを追求するためにバリューやミッションを設定する企業も増えている","MVVとパーパスは同様の意味合いで使われており全く同じ概念である"],answer:3,explanation:"MVVとパーパスは異なる概念です。MVVは「こうなりたい・こうする」という未来志向のメッセージが強く、必ずしも社会貢献を含みません。一方パーパスは「社会に対して自社がどのような価値を与えられるか」を示すもので、「今こう在るべき」という現在志向です。SDGs/ESGとの関連でパーパスへの注目が高まっています。"},
+  {id:98,category:"パーパス経営・デザイン経営",text:"デザイン経営について当てはまらないものはどれか？",options:["従来デザインの領域で用いられていた思考法を応用して経営を行うこと","社内にCDO（チーフ・デザイン・オフィサー）を設けブランドすべてのデザインを引き受ける部署を設置することが具体的な取り組みとして挙げられる","デザイン経営の実践にあたって重要だと言われるのが「ユーザー像を具体的に思い描くこと」である","社内でデザインを完成させできあがったものをユーザーに届けるというプロセスのことである"],answer:3,explanation:"「社内でデザインを完成させてから届ける」のは従来型のデザインの考え方です。デザイン経営では、ユーザーが何を求めているか・市場で満たされていないニーズは何かを常に問い続け、ユーザーアンケートやコミュニティを活用して具体的なユーザー像を描くことが重要です。ユーザー視点での共創プロセスが本質です。"},
+  {id:99,category:"パーパス経営・デザイン経営",text:"アフターデジタル時代のUXの本質として最も適切なものはどれか？",options:["直感的なインターフェースを追求すること","オフラインとオンラインの境界をなくし体験全体を設計すること","ユーザーの行動データを収集しマーケティング戦略に活用すること","すべてのサービスをデジタル化し顧客とのタッチポイントを増やすこと"],answer:1,explanation:"『アフターデジタル2 UXと自由』（藤井保文著）では、デジタルとリアルを分けて考える発想が古く、オンラインとオフラインを統合した体験（OMO：Online Merges with Offline）が重要と説かれています。ユーザーがデジタル・リアルを意識せずシームレスに体験できる設計が現代UXの本質です。"},
+  {id:100,category:"パーパス経営・デザイン経営",text:"アフターデジタル時代において最も効果的なUX戦略として最も適切なものはどれか？",options:["ユーザーの選択肢を最大限制限し最適な行動へ誘導する","データ分析を活用しサイトの構成などをデイリー単位で調整する","ユーザーの意図や価値観を踏まえ選択肢を提案しながらサポートする","UXデザインは大体においてユーザーが自由に選択できるようにすれば良い"],answer:2,explanation:"アフターデジタル時代のUX戦略では「完全最適化（ユーザーの選択を奪う）」ではなく、ユーザーが自律的に選択できる自由を尊重しながら適切な選択肢を提示することが重要です。ユーザーの意図・文脈・価値観を理解した上でサポートする「ガイド型」のアプローチが求められます。"},
+  {id:101,category:"パーパス経営・デザイン経営",text:"人間中心デザインの観点から重要な内容として最も適切なものはどれか？",options:["ユーザーは課題や困りごと自体をはっきり認識しているため開発者は観察や推論を加えることを避けるべき","消費者やステークホルダーなど多様な人々と協働して価値ある製品・サービスを創出することが望ましい","多様な人々と協働すると共通認識を作るのが困難なためなるべくカテゴリーを分けて議論するのが望ましい","ユーザーのニーズを満たすためにまずはデザインよりも機能が合っていることを保証することが重要"],answer:1,explanation:"多様な人々との協働（共創）は人間中心デザインから切り離せない要素です。ユーザーは「課題や困りごと」を必ずしも言語化できるとは限らないため、観察や推論・経験に基づく想像力を加えることがUXデザイナーに求められます。背景・知識の異なる人々との共通認識構築にはジャーニーマップ・ストーリーボードなどのツールが活用できます。"},
+  {id:102,category:"パーパス経営・デザイン経営",text:"「バリュージャーニー」の内容として最も適切なものはどれか？",options:["製品を販売するというゴールに向かってモノを企画し生産しファネル型で売っていくビジネスモデル","ビジネスモデルのすべての節点がひとつのコンセプトでまとめあげられその世界観を体現したジャーニーに顧客が乗り続け企業が寄り添い続けること","バリュージャーニー型のDXを行う企業はまずシステムの先行導入やビジネスモデルの変更を検討する必要がある","まずはユーザーの状況を理解することが優先でUXの企画はDXを進めていく中で検討していく"],answer:1,explanation:"バリュージャーニーは「体験提供型ビジネスをOMOの思考法で運営し、エクスペリエンス×データのループを回す新たなビジネスモデル」です。製品はあくまで顧客との接点の一つであり、アプリ・店舗・イベント・コールセンターなどすべての接点を通じて、一貫したコンセプトのもと顧客に寄り添い続けることが本質です。"},
+  {id:103,category:"パーパス経営・デザイン経営",text:"「社会アーキテクチャ」の現状や目指すべき姿として最も適切なものはどれか？",options:["デジタルが浸透したアフターデジタル社会だからこそ民間に与えられた力＝社会アーキテクチャの設計の分散化が進んでいる","デジタルがどこにでも浸透した社会においてはすべての行動をオンラインで完結できることを目指すのが望ましい","オンライン上でのアーキテクチャ設計をリアルの世界にも浸食させていくことは現状では困難","アーキテクチャを作ることによって新しい社会秩序が生まれる可能性がある"],answer:0,explanation:"アフターデジタル社会ではオンラインとオフラインの境界がなくなり、民間企業がリアル空間にもアーキテクチャ設計を浸食させることが可能になっています。その結果、社会アーキテクチャの設計権が国や行政だけでなく民間企業にも分散してきています。UXとテクノロジーの力で社会の仕組みの一端を担える時代になりつつあります。"},
+
+  // ── プロトタイプ手法（ID 104-108）──
+  {id:104,category:"プロトタイプ手法",text:"プロトタイプの種類として当てはまらないものはどれか？",options:["水平プロトタイプ","垂直プロトタイプ","Tプロトタイプ","鉛直プロトタイプ"],answer:3,explanation:"「鉛直プロトタイプ」という用語は存在しません。水平プロトタイプは機能の幅広さを浅く実装したもの（ナビゲーション全体の確認向け）、垂直プロトタイプは特定機能を深く実装したもの（購入フローなど重要機能の詳細確認向け）、Tプロトタイプは水平・垂直を組み合わせた手法です。"},
+  {id:105,category:"プロトタイプ手法",text:"「ローファイ（Low-fi）プロトタイプ」の全体概念として最も適切なものはどれか？",options:["低品質なUIデザイン","ユーザーフィードバックの無視","低コスト・低予算でのプロトタイプ開発による早期検証","ローコストでのユーザーテスト"],answer:2,explanation:"ローファイ（Low-fidelity）はアイデアやコンセプトを低コスト・短時間で形にして早期検証を行う手法です。紙でのワイヤーフレーム・付箋を使ったカード・スケッチなどが典型例です。開発の初期段階で問題を発見し、本格開発前に修正することで全体コストを大幅に削減できます。"},
+  {id:106,category:"プロトタイプ手法",text:"ハイファイプロトタイプでユーザーにタスクを実行してもらう際、忠実度（ハイファイ）にすべき要素として誤っているものはどれか？",options:["画面遷移（順番、数）","画面に表示する指示文の内容（エラーメッセージは除く）","リンクやボタンに表示するラベルテキスト","操作に関係したアイコンのデザイン"],answer:1,explanation:"「エラーメッセージを除く」という条件が誤りです。正しくは「エラーメッセージも含めた指示文の内容」がハイファイにすべき要素です。ユーザーがエラー時にどう対応するかも重要な評価対象です。他にも「画面要素の相対的な位置関係」「データ入力項目と入力書式」などがハイファイにすべき要素として挙げられます。"},
+  {id:107,category:"プロトタイプ手法",text:"「ワイヤーフレーム」について述べているものはどれか？",options:["ニュースサイトやオンラインストアなどに適用されるコンテンツを構造化するもの","プロトタイプ作成のための設計図にあたるもの","Webサイト内の全ページのURLとタイトルや記事内容がまとめられた一覧表","ページ遷移の設計とユーザーの目線の移動を考慮したレイアウト設計を含む導線設計"],answer:1,explanation:"ワイヤーフレームはプロトタイプ作成のための設計図です。ページの骨格・レイアウト・要素の配置を低詳細度で表現したものです。コンテンツを構造化するのは「情報アーキテクチャ（IA）」、全ページ一覧は「ディレクトリマップ」、ページ遷移・目線設計は「導線設計」です。"},
+  {id:108,category:"プロトタイプ手法",text:"MVP（Minimum Viable Product）の役割として最も適切なものはどれか？",options:["デザインプロセスの初期段階で必要な資源と時間を最小限に抑えるための手法","完璧な製品を一度に提供するためのデザインアプローチ","最も基本的な機能のみを備えた製品を早期にリリースしユーザーのフィードバックを得ることを目的とするアプローチ","ユーザビリティテストを行うためのプロトタイピング手法"],answer:2,explanation:"MVP（Minimum Viable Product）は製品の最小限バージョンを早期リリースしてユーザーの実際の反応を得る手法です。仮説検証→学習→改善の高速サイクルを実現し、本格開発前に方向性を修正できます。リーンスタートアップの中核概念で、Dropboxが動画デモのみでニーズを検証したことが有名な事例です。"},
+];
+
+// ─── localStorage ─────────────────────────────────────────────
+const LS_KEY = 'uxQuizProgress';
+const TOTAL = questions.length;
+
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return {};
+    const data = JSON.parse(raw);
+    return data.questionStats || {};
+  } catch (e) { return {}; }
+}
+function saveProgress() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify({ questionStats })); } catch (e) {}
+}
+function clearProgress() {
+  try { localStorage.removeItem(LS_KEY); } catch (e) {}
+}
+
+// ─── 状態 ─────────────────────────────────────────────────────
+let current = 0, correct = 0, wrong = 0, shuffled = [];
+let answerState = [];
+let currentMode = 'all';
+let questionStats = loadProgress();
+
+// ─── 記憶度ロジック ───────────────────────────────────────────
+function getStats(id) { return questionStats[id] || { correct: 0, wrong: 0, streak: 0 }; }
+function getMemoryLevel(id) {
+  const s = getStats(id);
+  const total = s.correct + s.wrong;
+  if (total === 0) return 'unanswered';
+  if (s.wrong >= 2) return 'weak';
+  if (s.correct > 0 && s.wrong > 0) return 'vague';
+  if (s.streak >= 3) return 'perfect';
+  if (s.correct >= 1) return 'learned';
+  return 'unanswered';
+}
+function recordAnswer(id, isCorrect) {
+  if (!questionStats[id]) questionStats[id] = { correct: 0, wrong: 0, streak: 0 };
+  const s = questionStats[id];
+  if (isCorrect) { s.correct++; s.streak++; } else { s.wrong++; s.streak = 0; }
+  saveProgress();
+}
+
+// ─── ユーティリティ ───────────────────────────────────────────
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ─── リセット ─────────────────────────────────────────────────
+function confirmReset() { document.getElementById('reset-modal').style.display = 'flex'; }
+function cancelReset() { document.getElementById('reset-modal').style.display = 'none'; }
+function executeReset() { clearProgress(); questionStats = {}; document.getElementById('reset-modal').style.display = 'none'; updateStartStats(); }
+
+// ─── スタート画面の統計更新 ───────────────────────────────────
+function updateStartStats() {
+  let counts = { perfect: 0, learned: 0, vague: 0, weak: 0, unanswered: 0 };
+  questions.forEach(q => counts[getMemoryLevel(q.id)]++);
+  document.getElementById('total-count').textContent = TOTAL;
+  document.getElementById('all-sub').textContent = `全${TOTAL}問すべてに挑戦する`;
+  document.getElementById('mem-unanswered').textContent = counts.unanswered + '問';
+  document.getElementById('mem-unanswered').textContent = counts.unanswered + '問';
+  document.getElementById('mem-perfect').textContent    = counts.perfect    + '問';
+  document.getElementById('mem-learned').textContent    = counts.learned    + '問';
+  document.getElementById('mem-vague').textContent      = counts.vague      + '問';
+  document.getElementById('mem-weak').textContent       = counts.weak       + '問';
+
+  const colors = ['#2d5fa8','#5b9bd5','#8ec4ef','#d97757','#dedad0'];
+  const keys   = ['perfect','learned','vague','weak','unanswered'];
+  const r = 44, cx = 60, cy = 60, stroke = 16;
+  const circ = 2 * Math.PI * r;
+  const arcsEl = document.getElementById('donut-arcs');
+  arcsEl.innerHTML = '';
+  let offset = 0;
+  keys.forEach((key, i) => {
+    const pct = counts[key] / TOTAL;
+    if (pct === 0) return;
+    const dash = pct * circ, gap = circ - dash;
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', r);
+    c.setAttribute('fill', 'none'); c.setAttribute('stroke', colors[i]);
+    c.setAttribute('stroke-width', stroke);
+    c.setAttribute('stroke-dasharray', `${dash} ${gap}`);
+    c.setAttribute('stroke-dashoffset', circ * 0.25 - offset * circ);
+    c.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
+    arcsEl.appendChild(c);
+    offset += pct;
+  });
+
+  const weakCount = questions.filter(q => (questionStats[q.id]?.wrong ?? 0) > 0).length;
+  const weakBtn = document.getElementById('weak-btn');
+  const weakSub = document.getElementById('weak-sub');
+  if (weakCount === 0) { weakBtn.classList.add('disabled'); weakSub.textContent = 'まだデータがありません'; }
+  else { weakBtn.classList.remove('disabled'); weakSub.textContent = `${weakCount}問を復習する`; }
+}
+
+// ─── ナビゲーション ───────────────────────────────────────────
+function goHome() {
+  document.getElementById('quiz-area').style.display = 'none';
+  document.getElementById('result-screen').className = 'result-screen';
+  document.getElementById('start-screen').classList.remove('hidden');
+  updateStartStats();
+}
+function confirmExit() { document.getElementById('exit-modal').style.display = 'flex'; }
+function cancelExit() { document.getElementById('exit-modal').style.display = 'none'; }
+function exitQuiz() { document.getElementById('exit-modal').style.display = 'none'; goHome(); }
+
+// ─── クイズ開始 ───────────────────────────────────────────────
+function beginQuiz(mode) {
+  currentMode = mode;
+  let pool;
+  if (mode === 'all')         pool = shuffle(questions);
+  else if (mode === 'random') pool = shuffle(questions).slice(0, 20);
+  else if (mode === 'weak') {
+    const w = questions.filter(q => (questionStats[q.id]?.wrong ?? 0) > 0);
+    pool = shuffle(w.length > 0 ? w : questions);
+  } else if (mode === 'custom') {
+    pool = customPool;
+  }
+  shuffled = pool;
+  current = 0; correct = 0; wrong = 0;
+  answerState = shuffled.map(() => ({ answered: false, selectedIdx: null }));
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('result-screen').className = 'result-screen';
+  document.getElementById('score-correct').textContent = '0';
+  document.getElementById('score-wrong').textContent   = '0';
+  document.getElementById('quiz-area').style.display   = 'block';
+  showQuestion();
+}
+
+// ─── 進捗バー更新 ─────────────────────────────────────────────
+function updateProgress() {
+  const total = shuffled.length;
+  const pct   = Math.round((current / total) * 100);
+  document.getElementById('progress-fill').style.width  = `${pct}%`;
+  document.getElementById('progress-text').textContent  = `${current + 1} / ${total}`;
+  document.getElementById('progress-pct').textContent   = `${pct}%`;
+}
+
+// ─── 問題表示 ─────────────────────────────────────────────────
+function showQuestion() {
+  const q     = shuffled[current];
+  const state = answerState[current];
+  updateProgress();
+  document.getElementById('q-num').textContent = `Q${String(current + 1).padStart(2, '0')}`;
+  document.getElementById('q-category').innerHTML =
+    `<span>${q.category}</span>${q.type === 'fill' ? '<span class="type-badge">穴埋め</span>' : ''}`;
+  const qtextEl   = document.getElementById('q-text');
+  const fillCtxEl = document.getElementById('fill-context');
+  if (q.type === 'fill') {
+    qtextEl.style.display   = 'none';
+    fillCtxEl.style.display = 'block';
+    fillCtxEl.innerHTML = q.context.replace(q.blank, `<span class="fill-blank" id="fill-blank-span">${q.blank}</span>`);
+  } else {
+    qtextEl.style.display   = 'block';
+    fillCtxEl.style.display = 'none';
+    qtextEl.textContent = q.text;
+  }
+  const optionsEl = document.getElementById('options');
+  optionsEl.innerHTML = '';
+  ['A','B','C','D'].forEach((key, i) => {
+    const div = document.createElement('div');
+    div.className = 'option';
+    div.innerHTML = `<div class="option-key">${key}</div><div class="option-text">${q.options[i]}</div><div class="option-mark"></div>`;
+    div.onclick = () => selectOption(i);
+    optionsEl.appendChild(div);
+  });
+  const btn = document.getElementById('btn-next');
+  if (state.answered) {
+    const opts  = document.querySelectorAll('.option');
+    const marks = document.querySelectorAll('.option-mark');
+    opts.forEach(o => o.classList.add('disabled'));
+    if (state.selectedIdx === q.answer) {
+      opts[state.selectedIdx].classList.add('correct');
+      marks[state.selectedIdx].textContent = '✓';
+      if (q.type === 'fill') updateBlank(true, q.options[q.answer]);
+    } else {
+      opts[state.selectedIdx].classList.add('wrong');
+      marks[state.selectedIdx].textContent = '✗';
+      opts[q.answer].classList.add('correct');
+      marks[q.answer].textContent = '✓';
+      if (q.type === 'fill') updateBlank(false, q.options[q.answer]);
+    }
+    btn.className   = 'btn btn-primary show';
+    btn.textContent = current + 1 < shuffled.length ? '次の問題へ →' : '結果を見る →';
+  } else {
+    btn.className = 'btn btn-primary';
+  }
+  document.getElementById('btn-prev').disabled = current === 0;
+  const qa = document.getElementById('quiz-area');
+  qa.style.animation = 'none'; qa.offsetHeight; qa.style.animation = 'fadeUp 0.3s ease';
+}
+
+function updateBlank(isCorrect, correctText) {
+  const span = document.getElementById('fill-blank-span');
+  if (!span) return;
+  span.textContent = correctText;
+  span.className   = 'fill-blank ' + (isCorrect ? 'filled-correct' : 'filled-wrong');
+}
+
+// ─── フィードバックモーダル ───────────────────────────────────
+function showModal(isCorrect, explanation) {
+  const overlay = document.getElementById('modal-overlay');
+  const total   = shuffled.length;
+  overlay.className = 'modal-overlay show ' + (isCorrect ? 'correct-fb' : 'wrong-fb');
+  document.getElementById('modal-icon').textContent  = isCorrect ? '✓' : '✗';
+  document.getElementById('modal-label').textContent = isCorrect ? '正解！' : '不正解';
+  document.getElementById('modal-text').textContent  = explanation;
+  document.getElementById('modal-btn').textContent   = current + 1 < total ? '次の問題へ →' : '結果を見る →';
+}
+function closeModal() { document.getElementById('modal-overlay').className = 'modal-overlay'; nextQuestion(); }
+
+// ─── 選択肢クリック ───────────────────────────────────────────
+function selectOption(idx) {
+  const state = answerState[current];
+  if (state.answered) return;
+  state.answered = true;
+  state.selectedIdx = idx;
+  const q     = shuffled[current];
+  const opts  = document.querySelectorAll('.option');
+  const marks = document.querySelectorAll('.option-mark');
+  opts.forEach(o => o.classList.add('disabled'));
+  const isCorrect = idx === q.answer;
+  recordAnswer(q.id, isCorrect);
+  if (isCorrect) {
+    opts[idx].classList.add('correct');
+    marks[idx].textContent = '✓';
+    correct++;
+    document.getElementById('score-correct').textContent = correct;
+    if (q.type === 'fill') updateBlank(true, q.options[q.answer]);
+    showModal(true, q.explanation);
+  } else {
+    opts[idx].classList.add('wrong');
+    marks[idx].textContent = '✗';
+    opts[q.answer].classList.add('correct');
+    marks[q.answer].textContent = '✓';
+    wrong++;
+    document.getElementById('score-wrong').textContent = wrong;
+    if (q.type === 'fill') updateBlank(false, q.options[q.answer]);
+    showModal(false, q.explanation);
+  }
+  const btn = document.getElementById('btn-next');
+  btn.className   = 'btn btn-primary show';
+  btn.textContent = current + 1 < shuffled.length ? '次の問題へ →' : '結果を見る →';
+  document.getElementById('btn-prev').disabled = current === 0;
+}
+
+// ─── 前後移動 ─────────────────────────────────────────────────
+function prevQuestion() { if (current > 0) { current--; showQuestion(); } }
+function nextQuestion()  {
+  if (!answerState[current].answered) return;
+  current++;
+  if (current < shuffled.length) showQuestion();
+  else showResult();
+}
+
+// ─── 結果画面 ─────────────────────────────────────────────────
+function showResult() {
+  document.getElementById('quiz-area').style.display  = 'none';
+  document.getElementById('result-screen').className  = 'result-screen show';
+  const pct = Math.round((correct / shuffled.length) * 100);
+  document.getElementById('result-score').textContent     = correct;
+  document.getElementById('result-pct-label').textContent = `${pct}%`;
+  setTimeout(() => { document.getElementById('result-bar-fill').style.width = `${pct}%`; }, 100);
+  const levels = [
+    [90, '🏆', 'エキスパートレベル',     'UXデザインの知識は非常に高いレベルにあります。'],
+    [70, '🎯', 'よくできました',         '基礎はしっかり身についています。'],
+    [50, '📖', 'もう少しです',           '復習してもう一度挑戦してみましょう。'],
+    [0,  '💪', '基礎から学び直しましょう','各フレームワークを丁寧に復習することをおすすめします。']
+  ];
+  const [, icon, message, sub] = levels.find(([t]) => pct >= t);
+  document.getElementById('result-icon').textContent    = icon;
+  document.getElementById('result-message').textContent = message;
+  document.getElementById('result-denom').textContent   = `/ ${shuffled.length} 問正解`;
+  document.getElementById('result-sub').textContent     =
+    `全${shuffled.length}問中${correct}問正解（正答率 ${pct}%）\n${sub}`;
+}
+
+function restartQuiz() { document.getElementById('result-screen').className = 'result-screen'; beginQuiz(currentMode); }
+
+// ─── カスタム出題モード ───────────────────────────────────────
+let customCount = 20;
+let customSelectedCats = new Set();
+let customPool = [];
+
+function openCustomModal() {
+  // カテゴリ一覧を動的生成
+  const catMap = {};
+  questions.forEach(q => {
+    if (!catMap[q.category]) catMap[q.category] = 0;
+    catMap[q.category]++;
+  });
+  const grid = document.getElementById('custom-cat-grid');
+  grid.innerHTML = '';
+  Object.entries(catMap).forEach(([cat, count]) => {
+    const chip = document.createElement('button');
+    chip.className = 'custom-cat-chip' + (customSelectedCats.has(cat) ? ' active' : '');
+    chip.innerHTML = `${cat} <span class="chip-count">${count}</span>`;
+    chip.onclick = () => toggleCat(cat, chip);
+    grid.appendChild(chip);
+  });
+  // 初期値：全カテゴリ選択
+  if (customSelectedCats.size === 0) {
+    Object.keys(catMap).forEach(cat => customSelectedCats.add(cat));
+    grid.querySelectorAll('.custom-cat-chip').forEach(c => c.classList.add('active'));
+  }
+  updateCustomUI();
+  document.getElementById('custom-modal').classList.add('show');
+}
+
+function closeCustomModal() {
+  document.getElementById('custom-modal').classList.remove('show');
+}
+
+function toggleCat(cat, chip) {
+  if (customSelectedCats.has(cat)) {
+    customSelectedCats.delete(cat);
+    chip.classList.remove('active');
+  } else {
+    customSelectedCats.add(cat);
+    chip.classList.add('active');
+  }
+  updateCustomUI();
+}
+
+function selectAllCats() {
+  const catMap = {};
+  questions.forEach(q => { catMap[q.category] = true; });
+  Object.keys(catMap).forEach(cat => customSelectedCats.add(cat));
+  document.getElementById('custom-cat-grid').querySelectorAll('.custom-cat-chip').forEach(c => c.classList.add('active'));
+  updateCustomUI();
+}
+
+function clearAllCats() {
+  customSelectedCats.clear();
+  document.getElementById('custom-cat-grid').querySelectorAll('.custom-cat-chip').forEach(c => c.classList.remove('active'));
+  updateCustomUI();
+}
+
+function getCustomPoolSize() {
+  return questions.filter(q => customSelectedCats.has(q.category)).length;
+}
+
+function updateCustomUI() {
+  const poolSize = getCustomPoolSize();
+  // カスタムカウントをクランプ
+  if (poolSize > 0 && customCount > poolSize) customCount = poolSize;
+  if (customCount < 1 && poolSize > 0) customCount = 1;
+  document.getElementById('custom-count-display').textContent = customCount;
+
+  const catHint = document.getElementById('custom-cat-hint');
+  const startBtn = document.getElementById('custom-start-btn');
+  if (customSelectedCats.size === 0) {
+    catHint.textContent = 'カテゴリを1つ以上選んでください';
+    startBtn.disabled = true;
+    startBtn.style.opacity = '0.45';
+    startBtn.style.cursor = 'not-allowed';
+  } else {
+    catHint.textContent = `選択中のカテゴリから ${customCount} 問（全 ${poolSize} 問中）`;
+    startBtn.disabled = false;
+    startBtn.style.opacity = '';
+    startBtn.style.cursor = '';
+  }
+}
+
+function adjustCount(delta) {
+  const poolSize = getCustomPoolSize();
+  if (poolSize === 0) return;
+  customCount = Math.max(1, Math.min(poolSize, customCount + delta));
+  updateCustomUI();
+}
+
+function startCustomQuiz() {
+  if (customSelectedCats.size === 0) return;
+  customPool = shuffle(questions.filter(q => customSelectedCats.has(q.category))).slice(0, customCount);
+  closeCustomModal();
+  beginQuiz('custom');
+}
+
+updateStartStats();
+</script>
+</body>
+</html>
